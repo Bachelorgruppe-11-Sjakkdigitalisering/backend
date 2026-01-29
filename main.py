@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # load model
-model = YOLO('best.pt')
+model = YOLO('klokke.pt')
 
 # opens the camera
 camera = cv2.VideoCapture(0)
