@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # load model
-model = YOLO('klokke.pt')
+model = YOLO('brikker.pt')
 
 # opens the camera
 camera = cv2.VideoCapture(0)
