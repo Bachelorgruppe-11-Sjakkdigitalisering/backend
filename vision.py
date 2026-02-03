@@ -17,5 +17,5 @@ class ObjectDetector:
     :param frame: The frame to run the model on.
     """
     # verbose=False keeps the console clean
-    results = self.model(frame, verbose=False)
+    results = self.model(frame, verbose=False, iou=0.7)
     return results[0]

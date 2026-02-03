@@ -2,7 +2,8 @@ import cv2
 
 from camera import CameraStream
 from vision import ObjectDetector
-from clock import ClockLogic
+from clock.logic import ClockLogic
+from clock.state import ClockState
 
 def main():
   # initialize our modules
@@ -34,7 +35,9 @@ def run(camera: CameraStream, detector: ObjectDetector):
   :param detector: The detector for what we want to detect (for example clock or pieces).
   :type detector: ObjectDetector
   """
+  clock_state = ClockState()
   finished = False
+
   while not finished:
     success, frame = camera.get_frame()
     if not success:
@@ -49,12 +52,14 @@ def run(camera: CameraStream, detector: ObjectDetector):
 
     # process logic
     # TODO: dette er nå spesifikt for å håndtere klokkelogikk, senere må vi håndtere annen logikk også
-    t_left, t_right = ClockLogic.detections_to_time(result=result, frame_width=w)
+    raw_left, raw_right = ClockLogic.detections_to_time(result=result, frame_width=w)
+    clock_info = clock_state.process(raw_left, raw_right)
     
-    if t_left or t_right:
-      print(f"left time: {t_left}")
-      print(f"right time: {t_right}")
-      # TODO: i fremtiden send til api her (api.send_time(current_time) for eksempel)
+    # display logic
+    if clock_info["status"] == "active":
+      print(f"white: {clock_info["white"]} | black: {clock_info["black"]}")
+    elif clock_info["status"] == "waiting_for_move":
+      print(f"waiting for first move...")
     
     # visualize
     annotated_frame = result.plot()
