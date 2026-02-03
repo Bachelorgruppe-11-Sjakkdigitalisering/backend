@@ -5,20 +5,9 @@ class ClockState:
   def __init__(self):
     self.white_side = None # 'left' or 'right'
 
-    # the "confirmed" stable time from the past
-    self.stable_left = None
-    self.stable_right = None
-
-    # the "candidate time" (what we currently see but aren't sure of yet)
-    self.candidate_left = None
-    self.candidate_right = None
-
-    # amount of frames the candidate has held steady
-    self.consistency_left = 0
-    self.consistency_right = 0
-
-    # the required amount of frames for a move on the clock to be valid
-    self.required_consistency = 8
+    # use helpers for different sides
+    self.left_tracker = StableTimeTracker(required_consistency=8)
+    self.right_tracker = StableTimeTracker(required_consistency=8)
 
   def process(self, current_left, current_right):
     """
@@ -28,71 +17,84 @@ class ClockState:
     :param current_left: The current left time.
     :param current_right: The current right time.
     """
-    # initialize history if it's the first run
-    if self.stable_left is None:
-      self.stable_left = current_left
-      self.stable_right = current_right
-      self.candidate_left = current_left
-      self.candidate_right = current_right
-      return {
-        "status": "calibrating",
-        "left": current_left,
-        "right": current_right
-      }
-    
-    # check for stability on the left
-    if current_left == self.candidate_left:
-      self.consistency_left += 1
-    else:
-      # it flickered, reset counter and pick new candidate
-      self.candidate_left = current_left
-      self.consistency_left = 0
+    # update tracker and check for changes
+    left_changed = self.left_tracker.update(current_left)
+    right_changed = self.right_tracker.update(current_right)
 
-    # check for stability on the right
-    if current_right == self.candidate_right:
-      self.consistency_right += 1
-    else:
-      self.candidate_right = current_right
-      self.consistency_right = 0
-
-    # determine if a real change has happened
-    left_has_changed_for_real = False
-    if self.consistency_left >= self.required_consistency:
-      if self.candidate_left != self.stable_left and len(self.candidate_left) > 0:
-        left_has_changed_for_real = True
-        self.stable_left = self.candidate_left
-    
-    right_has_changed_for_real = False
-    if self.consistency_right >= self.required_consistency:
-      if self.candidate_right != self.stable_right and len(self.candidate_right) > 0:
-        right_has_changed_for_real = True
-        self.stable_right = self.candidate_right
-
-    # game logic
+    # game logic, determine white if unknown
     if self.white_side is None:
-      if left_has_changed_for_real and not right_has_changed_for_real:
-        print("confirmed change on LEFT. left is white.")
-        self.white_side = "left"
-      elif right_has_changed_for_real and not left_has_changed_for_real:
-        print("confirmed change on RIGHT. right is white.")
-        self.white_side = "right"
+      self._determine_side(left_changed, right_changed)
 
-    # return result
-    if self.white_side == "left":
-      return {
-        "status": "active",
-        "white": self.stable_left,
-        "black": self.stable_right
-      }
-    elif self.white_side == "right":
-      return {
-        "status": "active",
-        "white": self.stable_right,
-        "black": self.stable_left
-      }
+    # return formatted result
+    return self._format_output()
+  
+  def _determine_side(self, left_changed, right_changed):
+    """
+    Decides who is white based on who moved first.
+    """
+    if left_changed and not right_changed:
+      print("confirmed change on LEFT. left is white.")
+      self.white_side = "left"
+    elif right_changed and not left_changed:
+      print("confirmed change on RIGHT. right is white.")
+      self.white_side = "right"
+
+  def _format_output(self):
+    """
+    Returns the dictionary expected.
+    """
+    # get the clean stable values from our trackers
+    left_val = self.left_tracker.value
+    right_val = self.right_tracker.value
+
+    # handle calibrating state
+    if left_val is None or right_val is None:
+      return {"status": "calibrating", "left": "", "right": ""}
     
-    return {
-      "status": "waiting_for_move",
-      "left": self.stable_left,
-      "right": self.stable_right
-    }
+    # return mapped values if we know sides
+    if self.white_side == "left":
+      return {"status": "active", "white": left_val, "black": right_val}
+    elif self.white_side == "right":
+      return {"status": "active", "white": right_val, "black": left_val}
+    
+    # default waiting state
+    return {"status": "waiting_for_move", "left": left_val, "right": right_val}
+  
+class StableTimeTracker:
+  """
+  Helper class that only updates its value if the input remains the same for N amount of frames.
+  """
+  def __init__(self, required_consistency=8):
+    self.value = None # the currently confirmed stable value
+    self.candidate = None # what we see right now
+    self.consistency_count = 0 # how long we've seen it
+    self.required = required_consistency
+
+  def update(self, current_input):
+    """
+    Updates the tracker with a new reading.
+    Returns True if the value changed this frame.
+    
+    :param current_input: The current value we just received.
+    """
+    # initialize if empty
+    if self.value is None:
+      self.value = current_input
+      self.candidate = current_input
+      return False
+  
+    # check candidate consistency
+    if current_input == self.candidate:
+      self.consistency_count += 1
+    else:
+      self.candidate = current_input
+      self.consistency_count = 0
+
+    # confirm change
+    # only update the real value if we meet the consistency requirement
+    if self.consistency_count >= self.required:
+      if self.candidate != self.value and len(self.candidate) > 0:
+        self.value = self.candidate
+        return True
+      
+    return False
