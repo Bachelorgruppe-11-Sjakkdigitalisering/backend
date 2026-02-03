@@ -18,14 +18,15 @@ class CameraStream:
     """
     Allows the user to select a region of interest (ROI).
     """
-    success, frame = self.camera.read()
+    success, first_frame = self.camera.read()
     if not success:
       print("Could not read frame for selection.")
       return
     
     # opens window to select area and deletes it after selection
-    rect = cv2.selectROI("Select Area", frame, fromCenter=False, showCrosshair=True)
+    rect = cv2.selectROI("Select Area", first_frame, fromCenter=False, showCrosshair=True)
     cv2.destroyWindow("Select Area")
+    cv2.waitKey(1)
 
     # check if a valid area was selected (width and height needs to be > 0)
     if rect[2] > 0 and rect[3] > 0:

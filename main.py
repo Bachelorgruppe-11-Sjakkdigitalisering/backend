@@ -1,59 +1,85 @@
 import cv2
-from ultralytics import YOLO
 
-# load model
-model = YOLO('brikker.pt')
+from camera import CameraStream
+from vision import ObjectDetector
+from clock import ClockLogic
 
-# opens the camera
-camera = cv2.VideoCapture(0)
+def main():
+  # initialize our modules
+  try:
+    print("loading ai model...")
+    # for now, specifically load clock model (CAN BE CHANGED TO PIECE MODEL IF PREFERRED)
+    detector = ObjectDetector("klokke.pt")
 
-if not camera.isOpened():
-  print("unable to open camera. will exit. bye.")
-  exit()
+    print ("loading camera...")
+    camera = CameraStream(source=0)
+    print("system initialized.")
+  except Exception as e:
+    print(f"error initializing: {e}")
+    return
 
-# take one picture to select zoom area
-success, first_frame = camera.read()
-if success:
-  # opens window to drag mouse to select clock
-  rect = cv2.selectROI("choose zoom area", first_frame, fromCenter=False, showCrosshair=True)
-  cv2.destroyWindow("choose zoom area")
+  # setup zoom area
+  print("press enter to select zoom area")
+  camera.select_zoom_area()
 
-  # rect returns (x, y, w, h). if w or h is 0, user didn't select anything
-  if rect[2] == 0 or rect[3] == 0:
-    zoom_active = False
-  else:
-    zoom_active = True
-    x,y,w,h = int(rect[0]), int(rect[1]), int(rect[2]), int(rect[3])
-else:
-  exit()
+  # run main loop
+  run(camera=camera, detector=detector)
 
-while True:
-  # read camera feed
-  success, frame = camera.read()
+def run(camera: CameraStream, detector: ObjectDetector):
+  """
+  Runs the main loop of the program.
+  
+  :param camera: The camera from which we capture the frames.
+  :type camera: CameraStream
+  :param detector: The detector for what we want to detect (for example clock or pieces).
+  :type detector: ObjectDetector
+  """
+  finished = False
+  while not finished:
+    success, frame = camera.get_frame()
+    if not success:
+      print("camera disconnected.")
+      finished = True
 
-  # if unable to read camera, exit loop
-  if not success:
-    print("can't receive frame. exiting...")
-    break
+    # start detecting objects
+    result = detector.detect(frame)
 
-  # apply zoom
-  if zoom_active:
-    # we slice the array to create a new, smaller image containing the clock
-    frame = frame[y:y+h, x:x+w]
+    # process logic
+    # TODO: dette er nå spesifikt for å håndtere klokkelogikk, senere må vi håndtere annen logikk også
+    current_time = ClockLogic.detections_to_time(result=result)
+    
+    if current_time:
+      print(f"detected time: {current_time}")
+      # TODO: i fremtiden send til api her (api.send_time(current_time) for eksempel)
+    
+    # visualize
+    annotated_frame = result.plot()
+    cv2.imshow("Clock Recognition", annotated_frame)
 
-  # feed camera to yolo model and get the results as a list
-  results = model(frame, verbose=False)
+    # exit on 'q'
+    if cv2.waitKey(1) == ord('q'):
+      finished = True
+    
+  camera.release()
 
-  # visualize results with boxes and labels on the image
-  annotated_frame = results[0].plot()
+def initialize_modules():
+  """
+  Initializes the modules and returns the camera and detector.
+  """
+  try:
+    print("loading ai model...")
+    # for now, specifically load clock model (CAN BE CHANGED TO PIECE MODEL IF PREFERRED)
+    detector = ObjectDetector("klokke.pt")
 
-  # display annotated frame
-  cv2.imshow("Episk ultra mega sjakk kamera", annotated_frame)
+    print ("loading camera...")
+    camera = CameraStream(source=0)
+    print("system initialized.")
+  except Exception as e:
+    print(f"error initializing: {e}")
+    return
+  
+  return detector, camera
+  
 
-  # wait for q to be pressed to exit loop
-  if cv2.waitKey(1) == ord('q'):
-    break
-
-# exit everything when out of loop
-camera.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+  main()
