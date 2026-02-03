@@ -36,6 +36,7 @@ def run(camera: CameraStream, detector: ObjectDetector):
   :type detector: ObjectDetector
   """
   clock_state = ClockState()
+  last_printed_times = None
   finished = False
 
   while not finished:
@@ -57,7 +58,14 @@ def run(camera: CameraStream, detector: ObjectDetector):
     
     # display logic
     if clock_info["status"] == "active":
-      print(f"white: {clock_info["white"]} | black: {clock_info["black"]}")
+      # create a tuple of the current times
+      current_times = (clock_info["white"], clock_info["black"])
+
+      # only print if this tuple is different from the last one we saw
+      if current_times != last_printed_times:
+        print(f"white: {clock_info["white"]} | black: {clock_info["black"]}")
+        last_printed_times = current_times
+        # TODO: legg til api kall her i fremtiden
     elif clock_info["status"] == "waiting_for_move":
       print(f"waiting for first move...")
     
