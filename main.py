@@ -41,15 +41,19 @@ def run(camera: CameraStream, detector: ObjectDetector):
       print("camera disconnected.")
       finished = True
 
+    # get frame width
+    h, w, _ = frame.shape
+
     # start detecting objects
     result = detector.detect(frame)
 
     # process logic
     # TODO: dette er nå spesifikt for å håndtere klokkelogikk, senere må vi håndtere annen logikk også
-    current_time = ClockLogic.detections_to_time(result=result)
+    t_left, t_right = ClockLogic.detections_to_time(result=result, frame_width=w)
     
-    if current_time:
-      print(f"detected time: {current_time}")
+    if t_left or t_right:
+      print(f"left time: {t_left}")
+      print(f"right time: {t_right}")
       # TODO: i fremtiden send til api her (api.send_time(current_time) for eksempel)
     
     # visualize
