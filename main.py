@@ -79,24 +79,5 @@ def run(camera: CameraStream, detector: ObjectDetector):
     
   camera.release()
 
-def initialize_modules():
-  """
-  Initializes the modules and returns the camera and detector.
-  """
-  try:
-    print("loading ai model...")
-    # for now, specifically load clock model (CAN BE CHANGED TO PIECE MODEL IF PREFERRED)
-    detector = ObjectDetector("klokke.pt")
-
-    print ("loading camera...")
-    camera = CameraStream(source=0)
-    print("system initialized.")
-  except Exception as e:
-    print(f"error initializing: {e}")
-    return
-  
-  return detector, camera
-  
-
 if __name__ == "__main__":
   main()
