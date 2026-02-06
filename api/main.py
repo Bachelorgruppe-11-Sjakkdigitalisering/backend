@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # starts a local FastAPI server
 app = FastAPI()
@@ -15,6 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# defines the data shape
+class GameState(BaseModel):
+  fen: str
+  white_time: str
+  black_time: str
+  is_active: bool = True
+
 # global variable to store state in memory
 # we initialize it with the starting chess position
 current_game = {
@@ -24,7 +32,17 @@ current_game = {
     "is_active": True
 }
 
-# create an endpoing for getting the data
+# endpoint for pushing new game state data
+@app.post("/api/update")
+async def set_game_state(data: GameState):
+  # 'global' here tells python that we want to update the 'current_game' variable outside of this method,
+  # not create a new current_game variable inside of it
+  global current_game
+  # '.model_dump()' converts the data from a Pydantic Object to a standard python dictionary
+  current_game = data.model_dump()
+  print(f"Updates received: {current_game['fen'][:15]}...")
+  return {"status": "updated"}
+
 # this endpoint will be used by react to fetch game state in future
 @app.get("/api/state")
 async def get_game_state():
