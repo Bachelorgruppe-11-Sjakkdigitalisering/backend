@@ -92,7 +92,7 @@ def main():
                     diff = cv2.absdiff(reference_board, current_v)
                     errors = []
 
-                    terskel = 0.1
+                    terskel = 0.05
 
                     for row in range(8):
                         for col in range(8):
