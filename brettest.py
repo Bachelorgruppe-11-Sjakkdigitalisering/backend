@@ -92,16 +92,29 @@ def main():
                     diff = cv2.absdiff(reference_board, current_v)
                     errors = []
 
-                    støy_terskel = 25
+                    terskel = 0.1
 
                     for row in range(8):
                         for col in range(8):
                             x1, y1, x2, y2 = get_square_coords(col, row)
-                            margin = 30
-                            square_diff = diff[y1:y2, x1:x2]
-                            mean_diff = np.mean(square_diff)
-                            if mean_diff > støy_terskel:
-                                errors.append((mean_diff, f"{files[col]}{ranks[row]}"))
+                            margin = 5
+                            # Hent ut ruten fra referansen og nåværende bilde (V-kanalen)
+                            ref_sq = reference_board[y1+margin:y2-margin, x1+margin:x2-margin]
+                            curr_sq = current_v[y1+margin:y2-margin, x1+margin:x2-margin]
+                            # Beregn gjennomsnittlig lysstyrke for ruten i referansen
+                            ref_brightness = np.mean(ref_sq)
+                            if ref_brightness < 1: ref_brightness = 1 # Unngå divisjon med null
+                            # Beregn absolutt differanse
+                            abs_diff = np.median(cv2.absdiff(ref_sq, curr_sq))
+                            # NORMALISERING: 
+                            # Vi dividerer differansen på referanse-lysstyrken.
+                            # En endring på 20 på en svart rute (verdi 50) gir 20/50 = 0.4
+                            # En endring på 20 på en hvit rute (verdi 200) gir 20/200 = 0.1
+                            relative_diff = abs_diff / ref_brightness
+                            # Juster terskelen (0.1 - 0.3 er ofte bra her)
+                            if relative_diff > terskel: 
+                                errors.append((relative_diff, f"{files[col]}{ranks[row]}"))
+                            
 
                     # Sorter ruter etter hvor mye de har endret seg
                     errors.sort(key=lambda x: x[0], reverse=True)
@@ -110,11 +123,23 @@ def main():
                     if len(errors) >= 2:
                         rute1 = errors[0][1]
                         rute2 = errors[1][1]
+                        # Hvis rute 1 og rute 2 er naboer (f.eks d1 og d2), 
+                        # se om det finnes en rute lenger unna som også har endret seg.
+                        dist = abs(ord(rute1[0]) - ord(rute2[0])) + abs(int(rute1[1]) - int(rute2[1]))
+                        if dist < 2 and len(errors) > 2:
+                            # Hvis de to beste er naboer, er rute 2 sannsynligvis støy (skygge).
+                            # Vi velger heller den neste på lista som er lenger unna.
+                            rute1 = errors[0][1]
+                            rute2 = errors[2][1] # Hopp over naboen
+                        else:
+                            rute1 = errors[0][1]
+                            rute2 = errors[1][1]
+
                         print(f"MULIG TREKK DETEKTERT: {rute1} <-> {rute2}")
                     elif len(errors) == 1:
-                        print(f"Kun én rute endret seg ({errors[0][1]}). Prøv å senke støy_terskel.")
+                        print(f"Kun én rute endret seg ({errors[0][1]}). Prøv å senke terskel verdien.")
                     else:
-                        print("Ingen betydelige endringer detektert. Sjekk belysning eller senk støy_terskel.")
+                        print("Ingen betydelige endringer detektert. Sjekk belysning eller senk terskel verdien.")
 
                 # --- TEGN RUTENETTET ---
                 for i in range(9):
