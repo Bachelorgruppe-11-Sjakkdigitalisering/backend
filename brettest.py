@@ -22,11 +22,23 @@ def sort_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
+def get_square_coords (col, row):
+    return col * 100, row * 100, (col + 1) * 100, (row + 1) * 100
+
 def main():
     cap = cv2.VideoCapture(0)
     
     # Buffer for å lagre hjørneposisjoner over tid
     corner_history = deque(maxlen=SMOOTHING_FRAMES)
+
+    reference_board = None  # Lagrer fargene på brettet før trekk
+    files = "abcdefgh"
+    ranks = "87654321"
+
+    print("KONTROLLER:")
+    print("'s' - Lagre nåværende brett (bruk før du starter eller etter et trekk)")
+    print("'l' - Finn ut hvilket trekk som er gjort")
+    print("'q' - Avslutt")
 
     print("Starter sjakk-deteksjon. Trykk 'q' for å avslutte.")
 
@@ -63,6 +75,46 @@ def main():
           
             try:   
                 M_inv = cv2.getPerspectiveTransform(dst, avg_corners)
+                M = cv2.getPerspectiveTransform(avg_corners, dst)
+
+                warped = cv2.warpPerspective(frame, M, (size, size))
+                warped_gray = cv2.cvtColor(warped, cv2.COLOR_BGR2HSV)
+                warped_gray_v = warped_gray[:,:,2]
+                key = cv2.waitKey(1) & 0xFF
+
+                if key == ord('s'):
+                    reference_board = warped_gray[:,:,2].copy()
+                    print("Brett-referanse lagret!")
+
+                if key == ord('l') and reference_board is not None:
+                    # Finn differanse mellom nåværende brett og referanse
+                    current_v = warped_gray[:,:,2]
+                    diff = cv2.absdiff(reference_board, current_v)
+                    errors = []
+
+                    støy_terskel = 25
+
+                    for row in range(8):
+                        for col in range(8):
+                            x1, y1, x2, y2 = get_square_coords(col, row)
+                            margin = 30
+                            square_diff = diff[y1:y2, x1:x2]
+                            mean_diff = np.mean(square_diff)
+                            if mean_diff > støy_terskel:
+                                errors.append((mean_diff, f"{files[col]}{ranks[row]}"))
+
+                    # Sorter ruter etter hvor mye de har endret seg
+                    errors.sort(key=lambda x: x[0], reverse=True)
+                    
+                    # De to rutene med størst endring er sannsynligvis fra/til
+                    if len(errors) >= 2:
+                        rute1 = errors[0][1]
+                        rute2 = errors[1][1]
+                        print(f"MULIG TREKK DETEKTERT: {rute1} <-> {rute2}")
+                    elif len(errors) == 1:
+                        print(f"Kun én rute endret seg ({errors[0][1]}). Prøv å senke støy_terskel.")
+                    else:
+                        print("Ingen betydelige endringer detektert. Sjekk belysning eller senk støy_terskel.")
 
                 # --- TEGN RUTENETTET ---
                 for i in range(9):
