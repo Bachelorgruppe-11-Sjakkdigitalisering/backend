@@ -1,9 +1,24 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from contextlib import asynccontextmanager
 
-# starts a local FastAPI server
-app = FastAPI()
+from api.database import create_db_and_tables
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+  # everything before yield runs on startup
+  print("starting up...")
+  print("creating database tables...")
+  create_db_and_tables()
+
+  yield # the application runs on this pause
+
+  # everything after yield runs on shutdown
+  print("shutting down and cleaning up...")
+
+# pass lifespan function to fastapi app
+app = FastAPI(lifespan=lifespan)
 
 # ALLOWS REACT TO TALK TO PYTHON (CORS)
 # React runs on localhost:5173, FastAPI on localhost:8000. 
@@ -48,5 +63,8 @@ async def get_game_state(board_id: int):
 @app.get("/api/games")
 async def list_games():
   return active_games
+
+# --- DATABASE ENDPOINTS ---
+
 
 # Run with: uvicorn api.main:app --reload --port 8000
