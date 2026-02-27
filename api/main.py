@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from sqlmodel import Session, select
+from typing import List
 
-from api.database import create_db_and_tables
+from api.database import ArchivedGame, create_db_and_tables, get_session
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,6 +67,35 @@ async def list_games():
   return active_games
 
 # --- DATABASE ENDPOINTS ---
+@app.post("/api/archive", response_model=ArchivedGame)
+async def save_game(game: ArchivedGame, session: Session = Depends(get_session)):
+  '''
+  Saves a finished game to the database.
+  '''
+  session.add(game)
+  session.commit()
+  session.refresh(game)
+  print(f"saved game to db: {game.white_player} vs {game.black_player}")
+  return game
 
+@app.get("/api/archive/search", response_model=List[ArchivedGame])
+async def search_games(player: str = None, session: Session = Depends(get_session)):
+  '''
+  Searches for a game or gets all of them
+  '''
+  query = select(ArchivedGame)
+
+  if player:
+    # search for the name in wither white or black player columns
+    query = query.where(
+      (ArchivedGame.white_player.__contains__(player)) |
+      (ArchivedGame.black_player.__contains__(player))
+    )
+  
+  # order by newest first
+  query = query.order_by(ArchivedGame.date_played.desc())
+
+  results = session.exec(query).all()
+  return results
 
 # Run with: uvicorn api.main:app --reload --port 8000
