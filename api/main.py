@@ -44,5 +44,9 @@ async def get_game_state(board_id: int):
   # return game if found
   return active_games[board_id]
 
+# endpoint to list all active games
+@app.get("/api/games")
+async def list_games():
+  return active_games
 
 # Run with: uvicorn api.main:app --reload --port 8000
