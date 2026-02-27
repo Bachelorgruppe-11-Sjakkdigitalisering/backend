@@ -1,1 +1,9 @@
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual Environments
+.venv/
+venv/
 __pycache__/

@@ -88,8 +88,8 @@ async def search_games(player: str = None, session: Session = Depends(get_sessio
   if player:
     # search for the name in wither white or black player columns
     query = query.where(
-      (ArchivedGame.white_player.__contains__(player)) |
-      (ArchivedGame.black_player.__contains__(player))
+      (ArchivedGame.white_player.contains(player)) |
+      (ArchivedGame.black_player.contains(player))
     )
   
   # order by newest first
