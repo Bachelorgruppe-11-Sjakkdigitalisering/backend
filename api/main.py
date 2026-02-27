@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -18,34 +18,31 @@ app.add_middleware(
 
 # defines the data shape
 class GameState(BaseModel):
+  board_id: int
   fen: str
   white_time: str
   black_time: str
   is_active: bool = True
 
 # global variable to store state in memory
-# we initialize it with the starting chess position
-current_game = {
-    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    "white_time": "10:00",
-    "black_time": "10:00",
-    "is_active": True
-}
+active_games: dict[int, dict] = {}
 
 # endpoint for pushing new game state data
 @app.post("/api/update")
 async def set_game_state(data: GameState):
-  # 'global' here tells python that we want to update the 'current_game' variable outside of this method,
-  # not create a new current_game variable inside of it
-  global current_game
   # '.model_dump()' converts the data from a Pydantic Object to a standard python dictionary
-  current_game = data.model_dump()
-  print(f"Updates received: {current_game['fen'][:15]}...")
-  return {"status": "updated"}
+  active_games[data.board_id] = data.model_dump()
+  print(f"Updates received for board {data.board_id}: FEN={data.fen}")
+  return {"status": "updated", "board_id": data.board_id}
 
-# this endpoint will be used by react to fetch game state in future
-@app.get("/api/state")
-async def get_game_state():
-  return current_game
+# endpoint to fetch a specific game
+@app.get("/api/game/{board_id}")
+async def get_game_state(board_id: int):
+  # check if board exists in memory
+  if board_id not in active_games:
+    raise HTTPException(status_code=404, detail=f"Board {board_id} not found or started yet.")
+  # return game if found
+  return active_games[board_id]
+
 
 # Run with: uvicorn api.main:app --reload --port 8000
