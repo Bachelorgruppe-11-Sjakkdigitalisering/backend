@@ -36,6 +36,11 @@ app.add_middleware(
 # defines the data shape
 class GameState(BaseModel):
   board_id: int
+  white_player: str = "White (Live)"
+  black_player: str = "Black (Live)"
+
+  pgn: str
+
   fen: str
   white_time: str
   black_time: str
