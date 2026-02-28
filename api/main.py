@@ -98,4 +98,16 @@ async def search_games(player: str = None, session: Session = Depends(get_sessio
   results = session.exec(query).all()
   return results
 
+@app.get("/api/archive/{game_id}", response_model=ArchivedGame)
+async def get_archived_game(game_id: int, session: Session = Depends(get_session)):
+  """
+  Fetches a single archived game by its database ID.
+  """
+  game = session.get(ArchivedGame, game_id)
+
+  if not game:
+    raise HTTPException(status_code=404, detail="Game not found")
+  
+  return game
+
 # Run with: uvicorn api.main:app --reload --port 8000
