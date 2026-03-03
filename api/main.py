@@ -164,6 +164,27 @@ async def get_player_games(player_id: int, session: Session = Depends(get_sessio
   ).order_by(ArchivedGame.date_played.desc())
 
   return session.exec(query).all()
+
+@app.post("/api/players", response_model=Player)
+async def create_player(player: Player, session: Session = Depends(get_session)):
+  """
+  Creates a new player in the database.
+  """
+  # safety check to see if a plyer with this name already exists
+  existing_player = session.exec(select(Player).where(Player.name == player.name)).first()
+
+  if existing_player:
+    raise HTTPException(
+      status_code=400,
+      detail=f"En spiller med navnet '{player.name}' eksisterer allerede i databasen"
+    )
   
+  # save the new player
+  session.add(player)
+  session.commit()
+  session.refresh(player)
+
+  print(f"Ny spiller lagt til: {player.name} (ID: {player.id})")
+  return player
 
 # Run with: uvicorn api.main:app --reload --port 8000
