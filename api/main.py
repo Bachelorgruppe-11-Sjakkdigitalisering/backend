@@ -81,7 +81,7 @@ async def save_game(game: ArchivedGame, session: Session = Depends(get_session))
   session.add(game)
   session.commit()
   session.refresh(game)
-  print(f"saved game to db: {game.white_player} vs {game.black_player}")
+  print(f"saved game to db: {game.white_player_name} vs {game.black_player_name}")
   return game
 
 @app.get("/api/archive/search", response_model=List[ArchivedGame])
@@ -92,10 +92,10 @@ async def search_games(player: str = None, session: Session = Depends(get_sessio
   query = select(ArchivedGame)
 
   if player:
-    # search for the name in wither white or black player columns
+    # search for the name in either white or black player columns
     query = query.where(
-      (ArchivedGame.white_player.contains(player)) |
-      (ArchivedGame.black_player.contains(player))
+      (ArchivedGame.white_player_name.contains(player)) |
+      (ArchivedGame.black_player_name.contains(player))
     )
   
   # order by newest first
@@ -116,7 +116,15 @@ async def get_archived_game(game_id: int, session: Session = Depends(get_session
   
   return game
 
-@app.get("api/players/{player_id}")
+@app.get("/api/players", response_model=List[Player])
+async def list_players(session: Session = Depends(get_session)):
+  """
+  Fetches all registered players.
+  """
+  players = session.exec(select(Player).order_by(Player.name)).all()
+  return players
+
+@app.get("/api/players/{player_id}")
 async def get_player_profile(player_id: int, session: Session = Depends(get_session)):
   """
   Fetches a single player and returns the player together with their stats.
@@ -139,7 +147,7 @@ async def get_player_profile(player_id: int, session: Session = Depends(get_sess
     else: losses += 1
 
   for game in games_as_black:
-    if game.result == "1-0": wins += 1
+    if game.result == "0-1": wins += 1
     elif game.result == "1/2-1/2": draws += 1
     else: losses += 1
 
