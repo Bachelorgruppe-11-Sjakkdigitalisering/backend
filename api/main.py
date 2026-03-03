@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from sqlmodel import Session, select
 from typing import List
 
-from api.database import ArchivedGame, create_db_and_tables, get_session
+from api.database import Player, ArchivedGame, create_db_and_tables, get_session
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -114,5 +114,44 @@ async def get_archived_game(game_id: int, session: Session = Depends(get_session
     raise HTTPException(status_code=404, detail="Game not found")
   
   return game
+
+@app.get("api/players/{player_id}")
+async def get_player_profile(player_id: int, session: Session = Depends(get_session)):
+  """
+  Fetches a single player and returns the player together with their stats.
+  """
+  player = session.get(Player, player_id)
+  if not player:
+    raise HTTPException(status_code=404, detail="Player not found")
+  
+  # calculate stats dynamically
+  games_as_white = session.exec(select(ArchivedGame).where(ArchivedGame.white_player_id == player_id)).all()
+  games_as_black = session.exec(select(ArchivedGame).where(ArchivedGame.black_player_id == player_id)).all()
+
+  wins = 0
+  draws = 0
+  losses = 0
+
+  for game in games_as_white:
+    if game.result == "1-0": wins += 1
+    elif game.result == "1/2-1/2": draws += 1
+    else: losses += 1
+
+  for game in games_as_black:
+    if game.result == "1-0": wins += 1
+    elif game.result == "1/2-1/2": draws += 1
+    else: losses += 1
+
+  return {
+    "player": player,
+    "stats": {
+      "total_games": len(games_as_white) + len(games_as_black),
+      "wins": wins,
+      "draws": draws,
+      "losses": losses
+    }
+  }
+
+  
 
 # Run with: uvicorn api.main:app --reload --port 8000
