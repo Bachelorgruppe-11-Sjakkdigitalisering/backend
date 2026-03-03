@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
 from typing import List
+from sqlalchemy import or_
 
 from api.database import Player, ArchivedGame, create_db_and_tables, get_session
 
@@ -152,6 +153,17 @@ async def get_player_profile(player_id: int, session: Session = Depends(get_sess
     }
   }
 
+@app.get("/api/players/{player_id}/games")
+async def get_player_games(player_id: int, session: Session = Depends(get_session)):
+  """
+  Fetches all games played by a specific player.
+  """
+  # find all games where this player was either white or black
+  query = select(ArchivedGame).where(
+    or_(ArchivedGame.white_player_id == player_id, ArchivedGame.black_player_id == player_id)
+  ).order_by(ArchivedGame.date_played.desc())
+
+  return session.exec(query).all()
   
 
 # Run with: uvicorn api.main:app --reload --port 8000
