@@ -117,12 +117,17 @@ async def get_archived_game(game_id: int, session: Session = Depends(get_session
   return game
 
 @app.get("/api/players", response_model=List[Player])
-async def list_players(session: Session = Depends(get_session)):
+async def list_players(search: str = None, session: Session = Depends(get_session)):
   """
-  Fetches all registered players.
+  Fetches all registered players, optionally filtered by name.
   """
-  players = session.exec(select(Player).order_by(Player.name)).all()
-  return players
+  query = select(Player)
+
+  if search: 
+    query = query.where(Player.name.contains(search))
+
+  query = query.order_by(Player.name)
+  return session.exec(query).all()
 
 @app.get("/api/players/{player_id}")
 async def get_player_profile(player_id: int, session: Session = Depends(get_session)):
