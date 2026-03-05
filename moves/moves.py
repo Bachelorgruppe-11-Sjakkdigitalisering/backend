@@ -51,3 +51,25 @@ def detect_move(ref_img, current_img, board_matrix):
         else:
             return square2, square1
     return None
+
+def get_occupied_squares(warped_frame, model):
+    # Kjør modellen på det flate bildet
+    results = model(warped_frame, conf=0.3, verbose=False)
+    occupied = []
+
+    if len(results[0].boxes) > 0:
+        boxes = results[0].boxes.xyxy.cpu().numpy()
+        
+        for box in boxes:
+            # Finn senter-bunn av brikken
+            px = (box[0] + box[2]) / 2
+            py = box[3] # Bunnen av boksen treffer selve ruten best
+            
+            # Konverter til rute-indeks (0-7)
+            col = int(px // 100)
+            row = int(py // 100)
+            
+            if 0 <= col <= 7 and 0 <= row <= 7:
+                occupied.append((row, col))
+                
+    return list(set(occupied)) # Fjerner duplikater hvis flere bokser treffer samme rute

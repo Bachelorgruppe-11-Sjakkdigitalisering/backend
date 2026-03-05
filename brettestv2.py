@@ -26,7 +26,7 @@ while True:
     if not success:
         break
 
-    # 1. Finn hjørner med YOLO
+    #  Finn hjørner med YOLO
     results = model(frame, conf=0.05, verbose=False, iou=0.1)
 
     if show_boxes:
@@ -46,7 +46,7 @@ while True:
 
     key = cv2.waitKey(1) & 0xFF
 
-    # 2. 'k' - Lås rutenettet (Perspektivet)
+    #  'k' - Lås rutenettet (Perspektivet)
     if key == ord('k') and len(history) > 0:
         avg_corners = np.mean(history, axis=0).astype("float32")
         target_pts = np.float32([[0,0], [800,0], [800,800], [0,800]])
@@ -54,7 +54,7 @@ while True:
         M_inv = cv2.getPerspectiveTransform(target_pts, avg_corners)
         print(">> Brettet er låst i denne posisjonen!")
 
-    # 3. Hvis låst, tegn og analyser
+    #  Hvis låst, tegn og analyser
 
     #toggle boxer fra modellen av og på
     if key == ord('y'):
