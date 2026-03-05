@@ -27,7 +27,7 @@ while True:
         break
 
     # 1. Finn hjørner med YOLO
-    results = model(frame, conf=0.05, verbose=False)
+    results = model(frame, conf=0.05, verbose=False, iou=0.3)
 
     if show_boxes:
         frame = results[0].plot()
