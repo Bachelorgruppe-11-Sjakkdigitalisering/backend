@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from collections import deque
-import board
-import moves
+from board import board
+from moves import moves
 
 # Last inn modellen og sett opp kamera
 model = YOLO('brett.pt')
@@ -19,13 +19,19 @@ M_inv = None
 print("SJAKK-DETEKSJON KLAR")
 board.print_board(current_board)
 
+show_boxes = False #for og sjekke om modellen har funnet relevante hjørner
+
 while True:
     success, frame = cap.read()
     if not success:
         break
 
     # 1. Finn hjørner med YOLO
-    results = model(frame, conf=0.1, verbose=False)
+    results = model(frame, conf=0.05, verbose=False)
+
+    if show_boxes:
+        frame = results[0].plot()
+
     if len(results[0].boxes) >= 4:
         all_boxes = results[0].boxes.xyxy.cpu().numpy()
         confs = results[0].boxes.conf.cpu().numpy()
@@ -49,6 +55,11 @@ while True:
         print(">> Brettet er låst i denne posisjonen!")
 
     # 3. Hvis låst, tegn og analyser
+
+    #toggle boxer fra modellen av og på
+    if key == ord('y'):
+        show_boxes = not show_boxes
+
     if M_inv is not None:
         board.draw_grid(frame, M_inv)
         
@@ -79,7 +90,9 @@ while True:
                 board.print_board(current_board)
                 # Gjør det nåværende bildet til ny referanse
                 reference_img = gray_warped.copy()
-
+        
+        
+    
     cv2.imshow("Kamerabilde", frame)
     if key == ord('q'):
         break
