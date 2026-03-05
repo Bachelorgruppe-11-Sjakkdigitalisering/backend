@@ -7,7 +7,7 @@ from moves import moves
 
 # Last inn modellen og sett opp kamera
 model = YOLO('brett.pt')
-model2 = YOLO('brikker100.pt')
+model2 = YOLO('brikker.pt')
 cap = cv2.VideoCapture(0)
 history = deque(maxlen=10)
 
@@ -82,29 +82,24 @@ while True:
         warped = cv2.warpPerspective(frame, M, (800, 800))
         gray_warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
-        #for og teste om modellen er bedre uten warped bilde
-        display_frame = frame.copy()
-
         # Hvis toggle er på, kjør model2 og vis resultatet
         if show_piece_boxes:
-            piece_results = model2(warped, conf=0.1, verbose=False)
-            print(f"DEBUG: Model2 ser {len(piece_results[0].boxes)} brikker. Beste conf: {piece_results[0].boxes.conf.max().item() if len(piece_results[0].boxes) > 0 else 0:.2f}")
-            warped_vis = piece_results[0].plot()
+            piece_results = model2(frame, conf=0.2, verbose=False , iou=0.1)
+            display_frame = piece_results[0].plot()
             
-            cv2.imshow("Brikke Deteksjon (Warped)", warped_vis)
+            cv2.imshow("Brikke Deteksjon (Warped)", display_frame)
         else:
             # Lukk vinduet hvis det er åpent og vi skrur av toggle
-            if cv2.getWindowProperty("Brikke Deteksjon (Warped)", cv2.WND_PROP_VISIBLE) > 0:
-                cv2.destroyWindow("Brikke Deteksjon (Warped)")
+            cv2.imshow("kamerabilde", frame)
 
         # 's' - Lagre bilde før du flytter brikke
         if key == ord('s'):
-            reference_occupied = moves.get_occupied_squares(warped, model2)
-            print(f"Referanse lagret: {len(reference_occupied)} brikker funnet.")
+            reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
+            print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
 
         # 'l' - Sjekk hvilket trekk som er gjort
         if key == ord('l'):
-            current_occupied = moves.get_occupied_squares(warped, model2)
+            current_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
     
             # Finn ruter som har mistet en brikke
             moved_from = [r for r in reference_occupied if r not in current_occupied]
