@@ -41,3 +41,20 @@ def draw_grid(frame, M_inv):
         t3 = cv2.perspectiveTransform(p3, M_inv)[0][0]
         t4 = cv2.perspectiveTransform(p4, M_inv)[0][0]
         cv2.line(frame, tuple(t3.astype(int)), tuple(t4.astype(int)), (0, 255, 0), 2)
+
+        files = "abcdefgh"
+        ranks = "87654321"
+    
+    for row in range(8):
+        for col in range(8):
+            # Finn sentrum av ruten i 800x800-systemet (50, 150, 250...)
+            cx, cy = col * 100 + 50, row * 100 + 50
+            
+            # Transformer punktet tilbake til kamera-perspektivet
+            p = np.array([[[cx, cy]]], dtype="float32")
+            tp = cv2.perspectiveTransform(p, M_inv)[0][0]
+            
+            # Skriv teksten på bildet
+            text = f"{files[col]}{ranks[row]}"
+            cv2.putText(frame, text, tuple(tp.astype(int)), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
