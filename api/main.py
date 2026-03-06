@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
 from typing import List
 from sqlalchemy import or_
 
-from api.database import Player, ArchivedGame, create_db_and_tables, get_session
+from api.database import create_db_and_tables, get_session
+from api.models import GameState, ArchivedGame, Player
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,19 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# defines the data shape
-class GameState(BaseModel):
-  board_id: int
-  white_player: str = "White (Live)"
-  black_player: str = "Black (Live)"
-
-  pgn: str
-
-  fen: str
-  white_time: str
-  black_time: str
-  is_active: bool = True
 
 # global variable to store state in memory
 active_games: dict[int, dict] = {}
@@ -200,4 +187,4 @@ async def create_player(player: Player, session: Session = Depends(get_session))
   print(f"Ny spiller lagt til: {player.name} (ID: {player.id})")
   return player
 
-# Run with: uvicorn api.main:app --reload --port 8000
+# Run with: python -m uvicorn api.main:app --reload --port 8000   
