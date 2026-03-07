@@ -57,7 +57,7 @@ async def get_game_state(board_id: int):
 # endpoint to list all active games
 @app.get("/api/games")
 async def list_games():
-  return active_games
+  return list(active_games.values())
 
 # --- DATABASE ENDPOINTS ---
 @app.post("/api/archive", response_model=ArchivedGame)
