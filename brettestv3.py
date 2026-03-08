@@ -33,8 +33,11 @@ while True:
     if not success:
         break
 
-    #  Finn hjørner med YOLO
-    results = model(frame, conf=0.05, verbose=False, iou=0.1)
+    #  Finn hjørner med YOLO, hvis perspektivet er låst kjøres ikke denne for og minimere steg i while løkken
+    if M_inv is None:
+        results = model(frame, conf=0.05, verbose=False, iou=0.1)
+        if show_boxes:
+            frame = results[0].plot()
 
     if show_boxes:
         frame = results[0].plot()
@@ -83,21 +86,21 @@ while True:
         gray_warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
         # Hvis toggle er på, kjør model2 og vis resultatet
-        if show_piece_boxes:
+        if show_piece_boxes or key ==ord('l') or key == ord('s'):
             piece_results = model2(frame, conf=0.2, verbose=False , iou=0.1)
+
+        if show_piece_boxes:
             display_frame = piece_results[0].plot()
-            
-            cv2.imshow("Brikke Deteksjon (Warped)", display_frame)
-        else:
-            # Lukk vinduet hvis det er åpent og vi skrur av toggle
-            cv2.imshow("kamerabilde", frame)
+            cv2.imshow("Brikke deteksjon", display_frame)
 
         # 's' - Lagre bilde før du flytter brikke
+        # To do : fikse slik at ikke modellen kjøres dobbelt.
         if key == ord('s'):
             reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
             print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
 
         # 'l' - Sjekk hvilket trekk som er gjort
+        # To do : fikse slik at ikke modellen kjøres dobbelt.
         if key == ord('l'):
             current_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
     
