@@ -59,14 +59,14 @@ def test_get_nonexistent_game():
   assert response.status_code == 404
   assert "not found" in response.json()["detail"]
 
-def test_create_player():
-  """Test the database logic of creating a player."""
+def test_set_and_get_player():
+  """Test the database logic of creating and retreiving a player."""
   name = "Magnus Carlsen"
   payload = {"name": name}
-  response = client.post("/api/players", json=payload)
 
-  assert response.status_code == 200
-  data = response.json()
+  post_response = client.post("/api/players", json=payload)
+  assert post_response.status_code == 200
+  data = post_response.json()
   assert data["name"] == name
   assert data["id"] is not None
 
@@ -78,3 +78,62 @@ def test_prevent_duplicate_players():
   response = client.post("api/players", json=payload)
   assert response.status_code == 400
   assert "eksisterer allerede" in response.json()["detail"]
+
+# TODO: hva om man to ulike spillere har samme navn??
+
+def test_get_new_player_profile():
+  """Test fetching a newly created player with no games played."""
+  name = "Vasily Smyslov"
+  create_response = client.post("/api/players", json={"name": name})
+  assert create_response.status_code == 200
+  player_id = create_response.json()["id"]
+
+  profile_response = client.get(f"/api/players/{player_id}")
+  assert profile_response.status_code == 200
+
+  data = profile_response.json()
+
+  assert data["player"]["name"] == name
+  assert data["player"]["id"] == player_id
+  assert data["stats"]["total_games"] == 0
+  assert data["stats"]["wins"] == 0
+  assert data["stats"]["draws"] == 0
+  assert data["stats"]["losses"] == 0
+
+def test_player_stats_calculation():
+  """Test that the dynamic stats calculator correctly counts game results."""
+  p1 = client.post("/api/players", json={"name": "Magnus Carlsen"}).json()
+  p2 = client.post("/api/players", json={"name": "Hikaru Nakamura"}).json()
+
+  game_payload = {
+    "white_player_name": p1["name"],
+    "black_player_name": p2["name"],
+    "white_player_id": p1["id"],
+    "black_player_id": p2["id"],
+    "result": "1-0",
+    "pgn": "1. e4 e5"
+  }
+  archive_response = client.post("/api/archive", json=game_payload)
+  assert archive_response.status_code == 200
+
+  p1_profile = client.get(f"/api/players/{p1['id']}").json()
+
+  assert p1_profile["stats"]["total_games"] == 1
+  assert p1_profile["stats"]["wins"] == 1
+  assert p1_profile["stats"]["draws"] == 0
+  assert p1_profile["stats"]["losses"] == 0
+
+  p2_profile = client.get(f"/api/players/{p2['id']}").json()
+
+  assert p2_profile["stats"]["total_games"] == 1
+  assert p2_profile["stats"]["wins"] == 0
+  assert p2_profile["stats"]["draws"] == 0
+  assert p2_profile["stats"]["losses"] == 1
+
+
+
+def test_get_nonexistent_player():
+  """Test fetching a player that doesn't exist."""
+  response = client.get("/api/players/999")
+  assert response.status_code == 404
+  assert response.json()["detail"] == "Player not found"
