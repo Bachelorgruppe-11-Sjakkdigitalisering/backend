@@ -58,3 +58,23 @@ def test_get_nonexistent_game():
   response = client.get("/api/game/999")
   assert response.status_code == 404
   assert "not found" in response.json()["detail"]
+
+def test_create_player():
+  """Test the database logic of creating a player."""
+  name = "Magnus Carlsen"
+  payload = {"name": name}
+  response = client.post("/api/players", json=payload)
+
+  assert response.status_code == 200
+  data = response.json()
+  assert data["name"] == name
+  assert data["id"] is not None
+
+def test_prevent_duplicate_players():
+  """Test that we get 400 error when trying to add duplicate player."""
+  payload = {"name": "Hikaru Nakamura"}
+  client.post("api/players", json=payload)
+  
+  response = client.post("api/players", json=payload)
+  assert response.status_code == 400
+  assert "eksisterer allerede" in response.json()["detail"]
