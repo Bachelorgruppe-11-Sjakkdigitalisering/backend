@@ -52,3 +52,9 @@ def test_set_and_get_live_game():
   get_response = client.get("/api/game/1")
   assert get_response.status_code == 200
   assert get_response.json()["fen"] == "startpos"
+
+def test_get_nonexistent_game():
+  """Test the 404 error handler."""
+  response = client.get("/api/game/999")
+  assert response.status_code == 404
+  assert "not found" in response.json()["detail"]
