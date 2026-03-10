@@ -2,67 +2,6 @@ import cv2
 import numpy as np
 
 
-def detect_move(ref_img, current_img, board_matrix):
-    changes = []
-    threshold = 0.15 # Hvor mye endring som skal til (følsomhet)
-    
-    for r in range(8):
-        for c in range(8):
-            # Finn ruten i det "warped" bildet (hver rute er 100x100)
-            x1, y1 = c * 100, r * 100
-            x2, y2 = x1 + 100, y1 + 100
-            
-            # Klipp ut ruten med litt marg for å unngå kantstøy
-            ref_sq = ref_img[y1+15:y2-15, x1+15:x2-15]
-            curr_sq = current_img[y1+15:y2-15, x1+15:x2-15]
-            
-            # Sammenlign forskjellen i lysstyrke
-            diff = np.median(cv2.absdiff(ref_sq, curr_sq))
-            brightness = max(np.mean(ref_sq), 1)
-            score = diff / brightness
-            
-            if score > threshold:
-                changes.append((score, files[c] + ranks[r]))
-
-    # Sorter endringene slik at de største kommer først
-    changes.sort(key=lambda x: x[0], reverse=True)
-
-    if len(changes) >= 2:
-        square1 = changes[0][1]
-        square2 = changes[1][1]
-        
-        # Sjekk hvilken rute som hadde brikken (fra-rute)
-        c1 = files.find(square1[0])
-        r1 = 8 - int(square1[1])
-        
-        if board_matrix[r1][c1] != ".":
-            return square1, square2
-        else:
-            return square2, square1
-    return None
-
-def get_occupied_squares(warped_frame, model):
-    # Kjør modellen på det flate bildet
-    results = model(warped_frame, conf=0.3, verbose=False)
-    occupied = []
-
-    if len(results[0].boxes) > 0:
-        boxes = results[0].boxes.xyxy.cpu().numpy()
-        
-        for box in boxes:
-            # Finn senter-bunn av brikken
-            px = (box[0] + box[2]) / 2
-            py = box[3] # Bunnen av boksen treffer selve ruten best
-            
-            # Konverter til rute-indeks (0-7)
-            col = int(px // 100)
-            row = int(py // 100)
-            
-            if 0 <= col <= 7 and 0 <= row <= 7:
-                occupied.append((row, col))
-                
-    return list(set(occupied)) # Fjerner duplikater hvis flere bokser treffer samme rute
-
 def get_occupied_squares_on_raw_frame(frame, model, M):
     results = model(frame, conf=0.3, verbose=False)
     occupied = []
