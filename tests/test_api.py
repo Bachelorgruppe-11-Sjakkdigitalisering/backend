@@ -262,3 +262,19 @@ def test_get_single_archived_game():
   bad_response = client.get("/api/archive/99999")
   assert bad_response.status_code == 404
   assert bad_response.json()["detail"] == "Game not found"
+
+def test_list_and_search_players():
+  """Test the player list endpoint with and without search parameters."""
+  client.post("/api/players", json={"name": "Garry Kasparov"})
+  client.post("/api/players", json={"name": "Anatoly Karpov"})
+  
+  resp_all = client.get("/api/players")
+  assert resp_all.status_code == 200
+  assert len(resp_all.json()) >= 2
+  
+  resp_search = client.get("/api/players?search=Garry")
+  assert resp_search.status_code == 200
+  
+  data = resp_search.json()
+  assert len(data) == 1
+  assert data[0]["name"] == "Garry Kasparov"
