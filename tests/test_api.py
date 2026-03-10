@@ -130,10 +130,51 @@ def test_player_stats_calculation():
   assert p2_profile["stats"]["draws"] == 0
   assert p2_profile["stats"]["losses"] == 1
 
-
-
 def test_get_nonexistent_player():
   """Test fetching a player that doesn't exist."""
   response = client.get("/api/players/999")
   assert response.status_code == 404
   assert response.json()["detail"] == "Player not found"
+
+def test_search_archived_games():
+  """Test filtering archived games by player name."""
+  game1 = {
+    "white_player_name": "Herman Lundby-Holen",
+    "black_player_name": "Magnus Carlsen",
+    "result": "1/2-1/2",
+    "pgn": "1. e4 e5"
+  }
+  game2 = {
+    "white_player_name": "Magnus Carlsen",
+    "black_player_name": "Dennis Johansen",
+    "result": "0-1",
+    "pgn": "1. d4 Nf6"
+  }
+  game3 = {
+    "white_player_name": "Hikaru Nakamura",
+    "black_player_name": "Fabiano Caruana",
+    "result": "1-0",
+    "pgn": "1. c4 e5"
+  }
+  client.post("/api/archive", json=game1)
+  client.post("/api/archive", json=game2)
+  client.post("/api/archive", json=game3)
+
+  resp_magnus = client.get("/api/archive/search?player=Magnus")
+  assert resp_magnus.status_code == 200
+  
+  data_magnus = resp_magnus.json()
+  assert len(data_magnus) == 2
+  
+  for game in data_magnus:
+      is_white = "Magnus" in game["white_player_name"]
+      is_black = "Magnus" in game["black_player_name"]
+      assert is_white or is_black 
+
+  resp_capablanca = client.get("/api/archive/search?player=Capablanca")
+  assert resp_capablanca.status_code == 200
+  assert resp_capablanca.json() == []
+
+  resp_all = client.get("/api/archive/search")
+  assert resp_all.status_code == 200
+  assert len(resp_all.json()) == 3
