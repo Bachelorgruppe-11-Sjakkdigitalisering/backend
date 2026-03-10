@@ -35,6 +35,17 @@ def setup_and_teardown():
   SQLModel.metadata.drop_all(engine)
 
 # ---- TESTS ----
+
+def test_app_startup_and_session():
+  """Test the app lifespan and the original get_session generator."""
+  with TestClient(app) as local_client:
+    assert local_client is not None
+
+  session_generator = get_session()
+  session = next(session_generator)
+  assert session is not None
+  session.close()
+
 def test_set_and_get_live_game():
   """Test the in-memory active_games logic."""
   payload = {

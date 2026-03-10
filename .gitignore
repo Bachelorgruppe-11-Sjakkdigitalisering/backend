@@ -8,5 +8,6 @@
 venv/
 __pycache__/
 
-# Testing
+# Coverage reports
 .coverage
+htmlcov/
