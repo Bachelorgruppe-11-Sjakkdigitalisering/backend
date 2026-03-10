@@ -91,8 +91,8 @@ while True:
             piece_results = model2(frame, conf=0.2, verbose=False , iou=0.1)
 
         if show_piece_boxes:
-            display_frame = piece_results[0].plot()
-            cv2.imshow("Brikke deteksjon", display_frame)
+            frame = piece_results[0].plot()
+        
 
         # 's' - Lagre bilde før du flytter brikke
         # To do : fikse slik at ikke modellen kjøres dobbelt.
