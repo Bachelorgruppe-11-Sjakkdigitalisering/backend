@@ -6,6 +6,7 @@ from chessboard import chessboard
 from moves import moves
 import chess
 import chess.pgn
+import requests
 
 # Last inn modellen og sett opp kamera
 model = YOLO('brett.pt')
@@ -157,6 +158,18 @@ while True:
                 print(game)
                 print("\n--- BRETT ---")
                 print(current_board)
+                payload = {
+                    "board_id": 1,
+                    "white_player_name": "Herman Lundby-Holen",
+                    "black_player_name": "Dennis Johansen",
+                    "fen": current_board.fen(),
+                    "pgn": str(game),
+                    "white_time": "10:00",
+                    "black_time": "10:00",
+                    "is_active": True
+                }
+                post_response = requests.post("http://127.0.0.1:8000/api/update", json=payload)
+                print(post_response)
             else:
                 print(f"Ulovlig trekk: {move_string}")
 
