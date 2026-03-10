@@ -143,21 +143,31 @@ def test_player_stats_calculation():
     "result": "1-0",
     "pgn": "1. e4 e5"
   }
+  game_2_payload = {
+    "white_player_name": p1["name"],
+    "black_player_name": p2["name"],
+    "white_player_id": p1["id"],
+    "black_player_id": p2["id"],
+    "result": "1/2-1/2",
+    "pgn": "1. e4 e5"
+  }
   archive_response = client.post("/api/archive", json=game_payload)
+  archive_2_response = client.post("/api/archive", json=game_2_payload)
   assert archive_response.status_code == 200
+  assert archive_2_response.status_code == 200
 
   p1_profile = client.get(f"/api/players/{p1['id']}").json()
 
-  assert p1_profile["stats"]["total_games"] == 1
+  assert p1_profile["stats"]["total_games"] == 2
   assert p1_profile["stats"]["wins"] == 1
-  assert p1_profile["stats"]["draws"] == 0
+  assert p1_profile["stats"]["draws"] == 1
   assert p1_profile["stats"]["losses"] == 0
 
   p2_profile = client.get(f"/api/players/{p2['id']}").json()
 
-  assert p2_profile["stats"]["total_games"] == 1
+  assert p2_profile["stats"]["total_games"] == 2
   assert p2_profile["stats"]["wins"] == 0
-  assert p2_profile["stats"]["draws"] == 0
+  assert p2_profile["stats"]["draws"] == 1
   assert p2_profile["stats"]["losses"] == 1
 
 def test_get_nonexistent_player():
