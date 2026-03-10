@@ -37,7 +37,7 @@ while True:
     display_frame = raw_frame.copy()    
 
     #  Finn hjørner med YOLO, hvis perspektivet er låst kjøres ikke denne for og minimere steg i while løkken
-    if M_inv is None:
+    if M_inv is None or show_boxes:
         results = model(raw_frame, conf=0.05, verbose=False, iou=0.1)
         if show_boxes:
             display_frame = results[0].plot()
@@ -91,7 +91,7 @@ while True:
         
         # Hvis toggle er på, kjør model2 og vis resultatet
         if show_piece_boxes or key ==ord('l') or key == ord('s'):
-            piece_results = model2(raw_frame, conf=0.2, verbose=False , iou=0.04)
+            piece_results = model2(raw_frame, conf=0.2, verbose=False , iou=0.2)
             print(f"Antall brikker funnet: {len(piece_results[0].boxes)}")
 
         if show_piece_boxes:
