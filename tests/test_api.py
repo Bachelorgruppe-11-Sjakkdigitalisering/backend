@@ -70,6 +70,25 @@ def test_get_nonexistent_game():
   assert response.status_code == 404
   assert "not found" in response.json()["detail"]
 
+def test_list_active_games():
+  """Test fetching all active games from memory."""
+  client.post("/api/update", json={
+    "board_id": 99,
+    "fen": "startpos",
+    "white_time": "10:00",
+    "black_time": "10:00",
+    "is_active": True
+  })
+
+  response = client.get("/api/games")
+  assert response.status_code == 200
+  
+  games = response.json()
+  assert len(games) >= 1
+  
+  board_ids = [game["board_id"] for game in games]
+  assert 99 in board_ids
+
 def test_set_and_get_player():
   """Test the database logic of creating and retreiving a player."""
   name = "Magnus Carlsen"
