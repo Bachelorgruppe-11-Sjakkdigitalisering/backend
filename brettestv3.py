@@ -148,30 +148,30 @@ while True:
                 move_string = start_sq + end_sq
                 move = chess.Move.from_uci(move_string)    
 
-            if move in current_board.legal_moves:
-                reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
-                print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
-                current_board.push(move)
-                print(f"Trekk utført: {move_string}")
-                game = chess.pgn.Game.from_board(current_board)
-                print("\n--- OPPDATERT PGN ---")
-                print(game)
-                print("\n--- BRETT ---")
-                print(current_board)
-                payload = {
-                    "board_id": 1,
-                    "white_player_name": "Herman Lundby-Holen",
-                    "black_player_name": "Dennis Johansen",
-                    "fen": current_board.fen(),
-                    "pgn": str(game),
-                    "white_time": "10:00",
-                    "black_time": "10:00",
-                    "is_active": True
-                }
-                post_response = requests.post("http://127.0.0.1:8000/api/update", json=payload)
-                print(post_response)
-            else:
-                print(f"Ulovlig trekk: {move_string}")
+                if move in current_board.legal_moves:
+                    reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
+                    print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
+                    current_board.push(move)
+                    print(f"Trekk utført: {move_string}")
+                    game = chess.pgn.Game.from_board(current_board)
+                    print("\n--- OPPDATERT PGN ---")
+                    print(game)
+                    print("\n--- BRETT ---")
+                    print(current_board)
+                    payload = {
+                        "board_id": 1,
+                        "white_player_name": "Herman Lundby-Holen",
+                        "black_player_name": "Dennis Johansen",
+                        "fen": current_board.fen(),
+                        "pgn": str(game),
+                        "white_time": "10:00",
+                        "black_time": "10:00",
+                        "is_active": True
+                    }
+                    post_response = requests.post("http://127.0.0.1:8000/api/update", json=payload)
+                    print(post_response)
+                else:
+                    print(f"Ulovlig trekk: {move_string}")
 
     
     cv2.imshow("Kamerabilde", display_frame)
