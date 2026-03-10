@@ -243,3 +243,22 @@ def test_get_player_games_by_id():
   resp_fake = client.get("/api/players/999/games")
   assert resp_fake.status_code == 200
   assert resp_fake.json() == []
+
+def test_get_single_archived_game():
+  """Test fetching an archived game by ID and the 404 fallback."""
+  game_payload = {
+      "white_player_name": "Test White",
+      "black_player_name": "Test Black",
+      "result": "1-0",
+      "pgn": ""
+  }
+  game = client.post("/api/archive", json=game_payload).json()
+  game_id = game["id"]
+  
+  response = client.get(f"/api/archive/{game_id}")
+  assert response.status_code == 200
+  assert response.json()["id"] == game_id
+  
+  bad_response = client.get("/api/archive/99999")
+  assert bad_response.status_code == 404
+  assert bad_response.json()["detail"] == "Game not found"
