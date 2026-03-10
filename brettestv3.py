@@ -95,7 +95,7 @@ while True:
             print(f"Antall brikker funnet: {len(piece_results[0].boxes)}")
 
         if show_piece_boxes:
-            display_frame = piece_results[0].plot()
+            display_frame = piece_results[0].plot(img=display_frame)
         
 
         # 's' - Lagre bilde før du flytter brikke
