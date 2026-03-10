@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 def sort_points(pts):
     # Sorterer hjørner manuelt: [Topp-Venstre, Topp-Høyre, Bunn-Høyre, Bunn-Venstre]
     pts = np.array(pts, dtype="float32")
@@ -12,17 +13,6 @@ def sort_points(pts):
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
     return rect
-
-def print_board(matrix):
-    # Enkel utskrift av 8x8-listen vår
-    print("\n    a b c d e f g h")
-    print("  +-----------------")
-    row_num = 8
-    for row in matrix:
-        print(f"{row_num} | {' '.join(row)}")
-        row_num -= 1
-    print("  +-----------------")
-    print("    a b c d e f g h\n")
 
 def draw_grid(frame, M_inv):
     # Tegner rutenettet ved å transformere punkter fra 800x800-koordinater

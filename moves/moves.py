@@ -1,17 +1,6 @@
 import cv2
 import numpy as np
 
-# Startposisjon i sjakk (Store = hvit, små = svart, . = tom rute)
-initial_board = [
-    ["r", "n", "b", "q", "k", "b", "n", "r"],
-    ["p", "p", "p", "p", "p", "p", "p", "p"],
-    ["."] * 8, ["."] * 8, ["."] * 8, ["."] * 8,
-    ["P", "P", "P", "P", "P", "P", "P", "P"],
-    ["R", "N", "B", "Q", "K", "B", "N", "R"]
-]
-
-files = "abcdefgh"
-ranks = "87654321"
 
 def detect_move(ref_img, current_img, board_matrix):
     changes = []

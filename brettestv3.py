@@ -4,6 +4,7 @@ from ultralytics import YOLO
 from collections import deque
 from board import board
 from moves import moves
+import chess
 
 # Last inn modellen og sett opp kamera
 model = YOLO('brett.pt')
@@ -12,7 +13,7 @@ cap = cv2.VideoCapture(0)
 history = deque(maxlen=10)
 
 # Variabler for å holde styr på tilstanden
-current_board = [row[:] for row in moves.initial_board] # Lager en kopi av startoppsettet
+current_board = chess.Board() # Lager en kopi av startoppsettet
 reference_img = None
 reference_occupied = []
 M = None
@@ -24,7 +25,7 @@ files = "abcdefgh"
 ranks = "87654321"
 
 print("SJAKK-DETEKSJON KLAR")
-board.print_board(current_board)
+print(current_board)
 
 
 
