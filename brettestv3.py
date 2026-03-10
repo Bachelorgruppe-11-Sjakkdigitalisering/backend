@@ -115,6 +115,9 @@ while True:
             # Finn ruter som har fått en brikke
             moved_to = [r for r in current_occupied if r not in reference_occupied]
 
+            start_sq = None
+            end_sq = None
+
             if len(moved_from) == 1 and len(moved_to) == 1:
                 f_row, f_col = moved_from[0]
                 t_row, t_col = moved_to[0]
@@ -122,29 +125,41 @@ while True:
                 end_sq = f"{files[t_col]}{ranks[t_row]}"
                 print(f"Trekk detektert: {start_sq} til {end_sq}")
 
-                #chessboard python biblotek implementasjon
-                move_string = start_sq + end_sq
-                move = chess.Move.from_uci(move_string)
-
-                if move in current_board.legal_moves:
-                    reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
-                    print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
-                    current_board.push(move)
-                    print(f"Trekk utført: {move_string}")
-                    game = chess.pgn.Game.from_board(current_board)
-                    print("\n--- OPPDATERT PGN ---")
-                    print(game)
-                    print("\n--- BRETT ---")
-                    print(current_board)
-                else:
-                    print(f"Ulovlig trekk: {move_string}")
+            elif len(moved_from) == 1 and len(moved_to) == 0:
+                f_row, f_col = moved_from[0]
+                temp_start = f"{files[f_col]}{ranks[f_row]}"
         
-                # Oppdater matrisen din her...
-                reference_occupied = current_occupied
-
+                # Vi sjekker alle lovlige trekk fra start_sq og ser om 
+                # destinasjonen er en rute som fortsatt er okkupert.
+                possible_moves = [m for m in current_board.legal_moves if m.uci().startswith(temp_start)]
+        
+                for m in possible_moves:
+                    dest_uci = m.uci()[2:4] 
+                    d_col = files.find(dest_uci[0])
+                    d_row = ranks.find(dest_uci[1])
             
-        
-        
+                    if (d_row, d_col) in current_occupied:
+                        start_sq = temp_start
+                        end_sq = dest_uci
+
+                #chessboard python biblotek implementasjon
+            if start_sq and end_sq:
+                move_string = start_sq + end_sq
+                move = chess.Move.from_uci(move_string)    
+
+            if move in current_board.legal_moves:
+                reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
+                print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
+                current_board.push(move)
+                print(f"Trekk utført: {move_string}")
+                game = chess.pgn.Game.from_board(current_board)
+                print("\n--- OPPDATERT PGN ---")
+                print(game)
+                print("\n--- BRETT ---")
+                print(current_board)
+            else:
+                print(f"Ulovlig trekk: {move_string}")
+
     
     cv2.imshow("Kamerabilde", display_frame)
     if key == ord('q'):
