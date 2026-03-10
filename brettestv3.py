@@ -2,9 +2,10 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from collections import deque
-from board import board
+from chessboard import chessboard
 from moves import moves
 import chess
+import chess.pgn
 
 # Last inn modellen og sett opp kamera
 model = YOLO('brett.pt')
@@ -55,7 +56,7 @@ while True:
             box = all_boxes[i]
             pts.append([(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])
         
-        history.append(board.sort_points(pts))
+        history.append(chessboard.sort_points(pts))
 
     key = cv2.waitKey(1) & 0xFF
 
@@ -83,7 +84,7 @@ while True:
         print(f">> Vis brikke-bokser: {show_piece_boxes}")
 
     if M_inv is not None:
-        board.draw_grid(display_frame, M_inv)
+        chessboard.draw_grid(display_frame, M_inv)
         
         # Lag et flatt bilde av brettet for analyse
         warped = cv2.warpPerspective(display_frame, M, (800, 800))
@@ -92,7 +93,6 @@ while True:
         # Hvis toggle er på, kjør model2 og vis resultatet
         if show_piece_boxes or key ==ord('l') or key == ord('s'):
             piece_results = model2(raw_frame, conf=0.2, verbose=False , iou=0.2)
-            print(f"Antall brikker funnet: {len(piece_results[0].boxes)}")
 
         if show_piece_boxes:
             display_frame = piece_results[0].plot(img=display_frame)
@@ -121,6 +121,21 @@ while True:
                 start_sq = f"{files[f_col]}{ranks[f_row]}"
                 end_sq = f"{files[t_col]}{ranks[t_row]}"
                 print(f"Trekk detektert: {start_sq} til {end_sq}")
+
+                #chessboard python biblotek implementasjon
+                move_string = start_sq + end_sq
+                move = chess.Move.from_uci(move_string)
+
+                if move in current_board.legal_moves:
+                    current_board.push(move)
+                    print(f"Trekk utført: {move_string}")
+                    game = chess.pgn.Game.from_board(current_board)
+                    print("\n--- OPPDATERT PGN ---")
+                    print(game)
+                    print("\n--- BRETT ---")
+                    print(current_board)
+                else:
+                    print(f"Ulovlig trekk: {move_string}")
         
                 # Oppdater matrisen din her...
                 reference_occupied = current_occupied
