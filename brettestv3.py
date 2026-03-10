@@ -30,18 +30,20 @@ print(current_board)
 
 
 while True:
-    success, frame = cap.read()
+    success, raw_frame = cap.read()
     if not success:
         break
 
+    display_frame = raw_frame.copy()    
+
     #  Finn hjørner med YOLO, hvis perspektivet er låst kjøres ikke denne for og minimere steg i while løkken
     if M_inv is None:
-        results = model(frame, conf=0.05, verbose=False, iou=0.1)
+        results = model(raw_frame, conf=0.05, verbose=False, iou=0.1)
         if show_boxes:
-            frame = results[0].plot()
+            display_frame = results[0].plot()
 
     if show_boxes:
-        frame = results[0].plot()
+        display_frame = results[0].plot()
 
     if len(results[0].boxes) >= 4:
         all_boxes = results[0].boxes.xyxy.cpu().numpy()
@@ -70,6 +72,7 @@ while True:
     #toggle boxer fra brett hjørne modellen av og på
     if key == ord('y'):
         show_boxes = not show_boxes
+      
 
     #toggle boxer fra brikkemodell av og på
     if key == ord('u'):
@@ -80,30 +83,31 @@ while True:
         print(f">> Vis brikke-bokser: {show_piece_boxes}")
 
     if M_inv is not None:
-        board.draw_grid(frame, M_inv)
+        board.draw_grid(display_frame, M_inv)
         
         # Lag et flatt bilde av brettet for analyse
-        warped = cv2.warpPerspective(frame, M, (800, 800))
+        warped = cv2.warpPerspective(display_frame, M, (800, 800))
         gray_warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
         # Hvis toggle er på, kjør model2 og vis resultatet
         if show_piece_boxes or key ==ord('l') or key == ord('s'):
-            piece_results = model2(frame, conf=0.2, verbose=False , iou=0.1)
+            piece_results = model2(raw_frame, conf=0.2, verbose=False , iou=0.04)
+            print(f"Antall brikker funnet: {len(piece_results[0].boxes)}")
 
         if show_piece_boxes:
-            frame = piece_results[0].plot()
+            display_frame = piece_results[0].plot()
         
 
         # 's' - Lagre bilde før du flytter brikke
         # To do : fikse slik at ikke modellen kjøres dobbelt.
         if key == ord('s'):
-            reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
+            reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
             print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
 
         # 'l' - Sjekk hvilket trekk som er gjort
         # To do : fikse slik at ikke modellen kjøres dobbelt.
         if key == ord('l'):
-            current_occupied = moves.get_occupied_squares_on_raw_frame(frame, model2, M)
+            current_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
     
             # Finn ruter som har mistet en brikke
             moved_from = [r for r in reference_occupied if r not in current_occupied]
@@ -125,7 +129,7 @@ while True:
         
         
     
-    cv2.imshow("Kamerabilde", frame)
+    cv2.imshow("Kamerabilde", display_frame)
     if key == ord('q'):
         break
 
