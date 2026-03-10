@@ -11,8 +11,9 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
         for box in boxes:
             # Vi bruker bunnen av boksen (px, py) fordi det er der brikken 
             # faktisk berører brettet.
+            h = box[3] - box[1] # høyden på boksen
             px = (box[0] + box[2]) / 2
-            py = box[3] # Bunnen av brikken
+            py = box[3] - (h * 0.10) # senter av bunnen av brikken + 10 % reisning
             
             # Transformer punktet fra kamera-koordinater til 800x800 systemet
             point = np.array([[[px, py]]], dtype="float32")

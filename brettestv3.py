@@ -127,6 +127,8 @@ while True:
                 move = chess.Move.from_uci(move_string)
 
                 if move in current_board.legal_moves:
+                    reference_occupied = moves.get_occupied_squares_on_raw_frame(raw_frame, model2, M)
+                    print(f"Referanse lagret: {len(reference_occupied)} brikker funnet i original feed.")
                     current_board.push(move)
                     print(f"Trekk utført: {move_string}")
                     game = chess.pgn.Game.from_board(current_board)
