@@ -178,3 +178,38 @@ def test_search_archived_games():
   resp_all = client.get("/api/archive/search")
   assert resp_all.status_code == 200
   assert len(resp_all.json()) == 3
+
+def test_get_player_games_by_id():
+  """Test fetching all archived games for a specific player ID."""
+  p1 = client.post("/api/players", json={"name": "Herman"}).json()
+  p2 = client.post("/api/players", json={"name": "Dennis"}).json()
+  p3 = client.post("/api/players", json={"name": "Magnus"}).json()
+
+  client.post("/api/archive", json={
+    "white_player_name": p1["name"], "white_player_id": p1["id"],
+    "black_player_name": p2["name"], "black_player_id": p2["id"],
+    "result": "1-0", "pgn": "1. e4 e5"
+  })
+  
+  client.post("/api/archive", json={
+    "white_player_name": p3["name"], "white_player_id": p3["id"],
+    "black_player_name": p1["name"], "black_player_id": p1["id"],
+    "result": "1/2-1/2", "pgn": "1. d4 d5"
+  })
+  
+  client.post("/api/archive", json={
+    "white_player_name": p2["name"], "white_player_id": p2["id"],
+    "black_player_name": p3["name"], "black_player_id": p3["id"],
+    "result": "0-1", "pgn": "1. c4 c5"
+  })
+
+  resp_herman = client.get(f"/api/players/{p1["id"]}/games")
+  assert resp_herman.status_code == 200
+  herman_games = resp_herman.json()
+  assert len(herman_games) == 2
+  for game in herman_games:
+    assert game["white_player_id"] == p1["id"] or game["black_player_id"] == p1["id"]
+
+  resp_fake = client.get("/api/players/999/games")
+  assert resp_fake.status_code == 200
+  assert resp_fake.json() == []
