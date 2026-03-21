@@ -40,3 +40,7 @@ class GameInfoCard(ctk.CTkFrame):
   def connect_live_feed_callback(self, callback):
     """Connect live feed view button to open actual live feed."""
     self.btn_live_feed.configure(command=callback)
+
+  def connect_stop_tracking_callback(self, callback):
+    """Connect stop tracking button to a function in the dashboard."""
+    self.btn_stop_tracking.configure(command=callback)

@@ -28,6 +28,7 @@ class MainAdminDashboard(customtkinter.CTk):
     self.game_card = GameInfoCard(self.main_frame, white_player="Dennis Johansen", black_player="Herman Lundby-Holen", status_text="Pending")
     self.game_card.grid(row=0, column=0, sticky="new")
     self.game_card.connect_live_feed_callback(self.on_live_feed_clicked)
+    self.game_card.connect_stop_tracking_callback(self.on_stop_tracking_clicked)
 
     # System logs
     self.log_frame = customtkinter.CTkFrame(self)
@@ -39,6 +40,9 @@ class MainAdminDashboard(customtkinter.CTk):
     print("Starting live feed logic.")
     self.game_card.update_status("Status: Active live stream.")
 
+  def on_stop_tracking_clicked(self):
+    print("Disabling tracking.")
+    self.game_card.update_status("Status: Paused.")
 
 app = MainAdminDashboard()
 app.mainloop()
