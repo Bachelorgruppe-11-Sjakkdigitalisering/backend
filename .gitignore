@@ -10,3 +10,4 @@ __pycache__/
 
 # Coverage reports
 .coverage
+htmlcov/

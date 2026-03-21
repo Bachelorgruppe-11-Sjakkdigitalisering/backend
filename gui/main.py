@@ -1,5 +1,5 @@
 import customtkinter
-import subprocess
+from game_info_card import GameInfoCard
 
 class MainAdminDashboard(customtkinter.CTk):
   def __init__(self):
@@ -11,7 +11,7 @@ class MainAdminDashboard(customtkinter.CTk):
 
   def _build_ui(self):
     # Configure layout of 2 rows and 2 columns
-    self.grid_rowconfigure(0, weight=1)
+    self.grid_rowconfigure(0, weight=1) # A non-zero weight makes this section expand to fill extra space
     self.grid_rowconfigure(1, weight=0)
     self.grid_columnconfigure(0, weight=0)
     self.grid_columnconfigure(1, weight=1)
@@ -25,8 +25,8 @@ class MainAdminDashboard(customtkinter.CTk):
     # Main view
     self.main_frame = customtkinter.CTkFrame(self)
     self.main_frame.grid(row=0, column=1, sticky="nsew")
-    self.main_label = customtkinter.CTkLabel(self.main_frame, text="Her kommer hovedvisningen til å være.")
-    self.main_label.pack()
+    self.game_card = GameInfoCard(self.main_frame, white_player="Dennis Johansen", black_player="Herman Lundby-Holen", status_text="Pending")
+    self.game_card.grid(row=0, column=0, sticky="new")
 
     # System logs
     self.log_frame = customtkinter.CTkFrame(self)
