@@ -27,6 +27,7 @@ class MainAdminDashboard(customtkinter.CTk):
     self.main_frame.grid(row=0, column=1, sticky="nsew")
     self.game_card = GameInfoCard(self.main_frame, white_player="Dennis Johansen", black_player="Herman Lundby-Holen", status_text="Pending")
     self.game_card.grid(row=0, column=0, sticky="new")
+    self.game_card.connect_live_feed_callback(self.on_live_feed_clicked)
 
     # System logs
     self.log_frame = customtkinter.CTkFrame(self)
@@ -34,6 +35,9 @@ class MainAdminDashboard(customtkinter.CTk):
     self.log_sample = customtkinter.CTkLabel(self.log_frame, text="Her er et eksempel på en logg.")
     self.log_sample.pack()
 
+  def on_live_feed_clicked(self):
+    print("Starting live feed logic.")
+    self.game_card.update_status("Status: Active live stream.")
 
 
 app = MainAdminDashboard()

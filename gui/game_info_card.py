@@ -32,3 +32,11 @@ class GameInfoCard(ctk.CTkFrame):
     # Stopp tracking button
     self.btn_stop_tracking = ctk.CTkButton(self.button_frame, text="Stopp tracking")
     self.btn_stop_tracking.pack(side="left")
+
+  def update_status(self, new_status_text: str):
+    """Update the status text."""
+    self.status_label.configure(text=new_status_text)
+
+  def connect_live_feed_callback(self, callback):
+    """Connect live feed view button to open actual live feed."""
+    self.btn_live_feed.configure(command=callback)
