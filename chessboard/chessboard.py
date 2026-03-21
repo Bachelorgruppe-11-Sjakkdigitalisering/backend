@@ -14,6 +14,29 @@ def sort_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
+def extract_corners(results):
+    if len(results[0].boxes) >= 4:
+        all_boxes = results[0].boxes.xyxy.cpu().numpy()
+        confs = results[0].boxes.conf.cpu().numpy()
+        best_indices = np.argsort(confs)[-4:]
+        
+        pts = []
+        for i in best_indices:
+            box = all_boxes[i]
+            pts.append([(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])
+        
+        return sort_points(pts)
+    return None
+
+def lock_perspective(history):
+    if len(history) > 0:
+        avg_corners = np.mean(history, axis=0).astype("float32")
+        target_pts = np.float32([[0,0], [800,0], [800,800], [0,800]])
+        M = cv2.getPerspectiveTransform(avg_corners, target_pts)
+        M_inv = cv2.getPerspectiveTransform(target_pts, avg_corners)
+        return M, M_inv
+    return None, None
+
 def draw_grid(frame, M_inv):
     # Tegner rutenettet ved å transformere punkter fra 800x800-koordinater
     # tilbake til kamerabildet ved hjelp av M_inv
