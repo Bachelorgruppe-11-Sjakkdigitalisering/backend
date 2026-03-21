@@ -1,40 +1,40 @@
 import customtkinter
 import subprocess
 
-class App(customtkinter.CTk):
+class MainAdminDashboard(customtkinter.CTk):
   def __init__(self):
     super().__init__()
-    self.geometry("400x150")
-    self.title ("ChessCam Admin")
+    self.geometry("1100x800")
+    self.title ("Sjakkdigitalisering Admin Panel")
 
-    # keeps track of background process
-    self.camera_process = None
+    self._build_ui()
 
-    # start button
-    self.start_button = customtkinter.CTkButton(self, text='Start gjenkjenning', command=self.start_camera)
-    self.start_button.pack(padx=20, pady=20)
-    
-    # stop button
-    self.stop_button = customtkinter.CTkButton(self, text='Stopp kamera', command=self.stop_camera)
-    self.stop_button.pack(padx=20, pady=0)
+  def _build_ui(self):
+    # Configure layout of 2 rows and 2 columns
+    self.grid_rowconfigure(0, weight=1)
+    self.grid_rowconfigure(1, weight=0)
+    self.grid_columnconfigure(0, weight=0)
+    self.grid_columnconfigure(1, weight=1)
 
-  def start_camera(self):
-    # .poll() checks if the process is already running, stops us from opening 5 cameras for example
-    if self.camera_process is None or self.camera_process.poll() is not None:
-      print("Kamera starter")
-      # this does the same as typing 'python main.py' in the terminal
-      self.camera_process = subprocess.Popen(['python', 'main.py'])
-    else:
-      print("Kamera kjører allerede")
+    # Left navigation drawer
+    self.nav_frame = customtkinter.CTkFrame(self)
+    self.nav_frame.grid(row=0, column=0, rowspan=2, sticky="nsew")
+    self.btn_nav1 = customtkinter.CTkButton(self.nav_frame, text="Active Game")
+    self.btn_nav1.pack(pady=10, padx=20)
 
-  def stop_camera(self):
-    # if a process exists and is currently running
-    if self.camera_process is not None and self.camera_process.poll() is None:
-      print("Stopper kamera")
-      self.camera_process.terminate()
-      self.camera_process = None
-    else:
-      print("Kamera kjører ikke")
+    # Main view
+    self.main_frame = customtkinter.CTkFrame(self)
+    self.main_frame.grid(row=0, column=1, sticky="nsew")
+    self.main_label = customtkinter.CTkLabel(self.main_frame, text="Her kommer hovedvisningen til å være.")
+    self.main_label.pack()
 
-app = App()
+    # System logs
+    self.log_frame = customtkinter.CTkFrame(self)
+    self.log_frame.grid(row=1, column=1)
+    self.log_sample = customtkinter.CTkLabel(self.log_frame, text="Her er et eksempel på en logg.")
+    self.log_sample.pack()
+
+
+
+app = MainAdminDashboard()
 app.mainloop()
