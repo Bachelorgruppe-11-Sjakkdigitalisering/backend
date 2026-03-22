@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import cv2
+from PIL import Image
 from components.game_info_card import GameInfoCard
 from components.live_feed_window import LiveFeedWindow
 
@@ -6,7 +8,10 @@ class MainAdminDashboard(ctk.CTk):
   def __init__(self):
     super().__init__()
     self.geometry("1100x800")
-    self.title ("Sjakkdigitalisering Admin Panel")
+    self.title("Sjakkdigitalisering Admin Panel")
+
+    self.live_window = None
+    self.cap = cv2.VideoCapture(0) # TODO: endre dette til faktisk kamera/modell feed
 
     self._build_ui()
 
@@ -44,7 +49,34 @@ class MainAdminDashboard(ctk.CTk):
   def on_live_feed_clicked(self):
     """Triggered whenever the 'Vis live feed' button is clicked."""
     print("Opening live feed window.")
-    LiveFeedWindow(self)
+    self.live_window = LiveFeedWindow(self)
+    self.game_card.update_status("Status: Live stream active")
+
+    self._stream_to_live_window()
+
+  def _stream_to_live_window(self):
+    """Pulls frames and sends them to the popup window."""
+    # Stop loop if window was closed
+    if self.live_window is None:
+      self.game_card.update_status("Status: Tracking Live (Move 14)")
+      return
+    
+    success, frame = self.cap.read()
+    if success:
+      board_pil = Image.fromarray(frame)
+      clock_pil = Image.fromarray(frame)
+      board_ctk = ctk.CTkImage(light_image=board_pil, dark_image=board_pil, size=(600, 400))
+      clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
+
+      self.live_window.update_feeds(board_ctk, clock_ctk)
+
+    # Loop again in aprox 30ms
+    self.after(30, self._stream_to_live_window)
+
+  def on_closing(self):
+    if self.cap.isOpened():
+      self.cap.release()
+    self.destroy()
 
   def on_stop_tracking_clicked(self):
     print("Disabling tracking.")

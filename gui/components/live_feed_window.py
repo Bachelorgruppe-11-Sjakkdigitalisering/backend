@@ -32,3 +32,10 @@ class LiveFeedWindow(ctk.CTkToplevel):
 
     self.clock_label = ctk.CTkLabel(self.clock_frame, text="Loading clock feed...")
     self.clock_label.pack(expand=True, fill="both")
+
+  def update_feeds(self, board_image: ctk.CTkImage, clock_image: ctk.CTkImage):
+    """Updates the board and clock frames."""
+    if board_image:
+      self.board_label.configure(image=board_image, text="")
+    if clock_image:
+      self.clock_label.configure(image=clock_image, text="")
