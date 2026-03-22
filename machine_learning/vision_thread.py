@@ -144,7 +144,7 @@ class VisionThread(threading.Thread):
       move = moves.detect_move(self.reference_occupied, current_occupied, self.current_board)
 
       if move:
-        print(f"MOVE DETECTED -> {move.uci()}")
+        print(f"MOVE DETECTED on attempt {self.check_counter} -> {move.uci()}")
         self.current_board.push(move)
         self.reference_occupied = current_occupied
         self.latest_move = move.uci()
