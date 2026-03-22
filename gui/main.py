@@ -49,16 +49,19 @@ class MainAdminDashboard(ctk.CTk):
   def on_live_feed_clicked(self):
     """Triggered whenever the 'Vis live feed' button is clicked."""
     print("Opening live feed window.")
-    self.live_window = LiveFeedWindow(self)
-    self.game_card.update_status("Status: Live stream active")
-
-    self._stream_to_live_window()
+    if self.live_window is None or not self.live_window.winfo_exists():
+      self.live_window = LiveFeedWindow(self)
+      self.game_card.update_status("Status: Live stream active")
+      self._stream_to_live_window()
+    else:
+      self.live_window.focus()
 
   def _stream_to_live_window(self):
     """Pulls frames and sends them to the popup window."""
     # Stop loop if window was closed
-    if self.live_window is None:
+    if self.live_window is None or not self.live_window.winfo_exists():
       self.game_card.update_status("Status: Tracking Live (Move 14)")
+      self.live_window = None
       return
     
     success, frame = self.cap.read()
