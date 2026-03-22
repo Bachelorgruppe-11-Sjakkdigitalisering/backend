@@ -62,6 +62,18 @@ class MainAdminDashboard(ctk.CTk):
     self.btn_set_clock = ctk.CTkButton(self.control_frame, text="Velg klokkeområde", command=self.open_roi_selector)
     self.btn_set_clock.pack(side="left")
 
+    self.btn_toggle_pieces = ctk.CTkButton(self.control_frame, text="Skjul brikker", command=self.toggle_piece_boxes)
+    self.btn_toggle_pieces.pack(side="left")
+
+  def toggle_piece_boxes(self):
+    """Toggles the visibility of the YOLO piece bounding boxes."""
+    if self.vision_worker.show_piece_boxes:
+      self.vision_worker.show_piece_boxes = False
+      self.btn_toggle_pieces.configure(text="Vis brikker")
+    else:
+      self.vision_worker.show_piece_boxes = True
+      self.btn_toggle_pieces.configure(text="Skjul brikker")
+
   def open_roi_selector(self):
     """Grabs one frame from the queue and opens the drawing tool."""
     try:
