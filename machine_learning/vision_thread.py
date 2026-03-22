@@ -4,6 +4,7 @@ import cv2
 import time
 import numpy as np
 import chessboard.chessboard as chessboard
+from machine_learning.motion_detector import MotionDetector
 from ultralytics import YOLO
 from collections import deque
 
@@ -28,8 +29,9 @@ class VisionThread(threading.Thread):
     self.M_inv = None
     self.show_boxes = True
     self.show_piece_boxes = True
-
     self.clock_roi = None
+
+    self.motion_detector = MotionDetector(movement_threshold=5000, required_still_frames=15)
 
   def start_camera(self):
     self.cap = cv2.VideoCapture(self.camera_source)
@@ -76,8 +78,17 @@ class VisionThread(threading.Thread):
       if self.M_inv is not None:
         # Board is locked
         chessboard.draw_grid(processed_board_frame, self.M_inv)
-        piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
+
+        warped_board = cv2.warpPerspective(frame, self.M, (800, 800))
+        motion_state = self.motion_detector.update(warped_board)
+
+        if motion_state == "MOTION":
+          print("Motion detected! Hand is over the board...")
+        elif motion_state == "SETTLED":
+          print("BOARD SETTLED -> Ready to run YOLO pieces and check for moves!")
+
         if self.show_piece_boxes:
+          piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
           processed_board_frame = piece_results[0].plot(img=processed_board_frame)
 
       if self.clock_roi is not None:
