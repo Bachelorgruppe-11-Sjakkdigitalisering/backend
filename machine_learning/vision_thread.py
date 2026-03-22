@@ -43,6 +43,11 @@ class VisionThread(threading.Thread):
     self.show_piece_boxes = True
     self.motion_detector = MotionDetector(movement_threshold=5000, required_still_frames=15)
 
+    # Retry logic state
+    self.is_checking_move = False
+    self.check_counter = 0
+    self.MAX_CHECKS = 30
+
     # Clock state
     self.clock_roi = None
 
@@ -121,8 +126,20 @@ class VisionThread(threading.Thread):
       self.reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, self.piece_model, self.M)
       self.board_is_setup = True
       print(f"Initial board setup complete! {len(self.reference_occupied)} pieces found.")
+
+    elif motion_state == "MOTION":
+      if self.is_checking_move:
+        print("Hand returned! Cancelling move check.")
+      self.is_checking_move = False
+
     elif motion_state == "SETTLED" and self.board_is_setup:
       print("Board settled! Checking for move...")
+      self.is_checking_move = True
+      self.check_counter = 0
+
+    if self.is_checking_move:
+      self.check_counter += 1
+
       current_occupied = moves.get_occupied_squares_on_raw_frame(frame, self.piece_model, self.M)
       move = moves.detect_move(self.reference_occupied, current_occupied, self.current_board)
 
@@ -131,8 +148,11 @@ class VisionThread(threading.Thread):
         self.current_board.push(move)
         self.reference_occupied = current_occupied
         self.latest_move = move.uci()
-      else:
-        print("No valid move detected.")
+        self.is_checking_move = False
+
+      elif self.check_counter >= self.MAX_CHECKS:
+        print(f"Timed out. Tried {self.check_counter} times but found no legal move.")
+        self.is_checking_move = False
 
     if self.show_piece_boxes:
       piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
