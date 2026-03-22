@@ -97,13 +97,23 @@ class MainAdminDashboard(ctk.CTk):
     try:
       # Grab latest frame from background thread
       data = self.frame_queue.get_nowait()
-      frame = data["frame"]
+      board_frame = data["frame"]
+      clock_frame = data["clock_frame"]
 
-      frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-      board_pil = Image.fromarray(frame_rgb)
-      clock_pil = Image.fromarray(frame_rgb)
+      board_rgb = cv2.cvtColor(board_frame, cv2.COLOR_BGR2RGB)
+      board_pil = Image.fromarray(board_rgb)
       board_ctk = ctk.CTkImage(light_image=board_pil, dark_image=board_pil, size=(600, 400))
-      clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
+
+      clock_rgb = cv2.cvtColor(clock_frame, cv2.COLOR_BGR2RGB)
+      clock_pil = Image.fromarray(clock_rgb)
+
+      # Resize based on the crops aspect ratio
+      img_w, img_h = clock_pil.size
+      if img_w > 0 and img_h > 0:
+        ratio = 600 / img_w
+        clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, int(img_h * ratio)))
+      else:
+        clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
 
       self.live_window.update_feeds(board_ctk, clock_ctk)
     except queue.Empty:
