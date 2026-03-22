@@ -2,6 +2,7 @@ import threading
 import queue
 import cv2
 import time
+import numpy as np
 import chessboard.chessboard as chessboard
 from ultralytics import YOLO
 from collections import deque
@@ -84,6 +85,8 @@ class VisionThread(threading.Thread):
 
         clock_frame_to_display = clock_results[0].plot()
         # TODO: hent siffer med ClockLogic og prosesser med ClockState
+      else:
+        clock_frame_to_display = np.zeros((150, 600, 3), dtype=np.uint8)
 
       # Pass data to GUI queue
       # Clear out old frames if the GUI is reading too slowly
