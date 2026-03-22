@@ -1,8 +1,10 @@
 import customtkinter as ctk
 import cv2
+import queue
 from PIL import Image
-from components.game_info_card import GameInfoCard
-from components.live_feed_window import LiveFeedWindow
+from gui.components.game_info_card import GameInfoCard
+from gui.components.live_feed_window import LiveFeedWindow
+from machine_learning.vision_thread import VisionThread
 
 class MainAdminDashboard(ctk.CTk):
   def __init__(self):
@@ -11,7 +13,10 @@ class MainAdminDashboard(ctk.CTk):
     self.title("Sjakkdigitalisering Admin Panel")
 
     self.live_window = None
-    self.cap = cv2.VideoCapture(0) # TODO: endre dette til faktisk kamera/modell feed
+    
+    self.frame_queue = queue.Queue()
+    self.vision_worker = VisionThread(self.frame_queue, camera_source=0)
+    self.vision_worker.start_camera()
 
     self._build_ui()
 
@@ -64,8 +69,11 @@ class MainAdminDashboard(ctk.CTk):
       self.live_window = None
       return
     
-    success, frame = self.cap.read()
-    if success:
+    try:
+      # Grab latest frame from background thread
+      data = self.frame_queue.get_nowait()
+      frame = data["frame"]
+
       frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
       board_pil = Image.fromarray(frame_rgb)
       clock_pil = Image.fromarray(frame_rgb)
@@ -73,13 +81,15 @@ class MainAdminDashboard(ctk.CTk):
       clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
 
       self.live_window.update_feeds(board_ctk, clock_ctk)
+    except queue.Empty:
+      # If background thread has not produced new frame, just skip
+      pass
 
     # Loop again in aprox 30ms
     self.after(30, self._stream_to_live_window)
 
   def on_closing(self):
-    if self.cap.isOpened():
-      self.cap.release()
+    self.vision_worker.stop()
     self.destroy()
 
   def on_stop_tracking_clicked(self):
