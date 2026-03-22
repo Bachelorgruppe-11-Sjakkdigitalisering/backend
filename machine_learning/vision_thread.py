@@ -2,8 +2,10 @@ import threading
 import queue
 import cv2
 import time
+import chess
 import numpy as np
 import chessboard.chessboard as chessboard
+import moves.moves as moves
 from machine_learning.motion_detector import MotionDetector
 from ultralytics import YOLO
 from collections import deque
@@ -32,6 +34,11 @@ class VisionThread(threading.Thread):
     self.clock_roi = None
 
     self.motion_detector = MotionDetector(movement_threshold=5000, required_still_frames=15)
+
+    self.current_board = chess.Board()
+    self.reference_occupied = []
+    self.board_is_setup = False
+    self.latest_move = None
 
   def start_camera(self):
     self.cap = cv2.VideoCapture(self.camera_source)
@@ -82,10 +89,22 @@ class VisionThread(threading.Thread):
         warped_board = cv2.warpPerspective(frame, self.M, (800, 800))
         motion_state = self.motion_detector.update(warped_board)
 
-        if motion_state == "MOTION":
-          print("Motion detected! Hand is over the board...")
-        elif motion_state == "SETTLED":
-          print("BOARD SETTLED -> Ready to run YOLO pieces and check for moves!")
+        if not self.board_is_setup and motion_state == "IDLE":
+          self.reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, self.piece_model, self.M)
+          self.board_is_setup = True
+          print(f"Initial board setup complete! {len(self.reference_occupied)} pieces found.")
+        elif motion_state == "SETTLED" and self.board_is_setup:
+          print("Board settled! Checking for move...")
+          current_occupied = moves.get_occupied_squares_on_raw_frame(frame, self.piece_model, self.M)
+          move = moves.detect_move(self.reference_occupied, current_occupied, self.current_board)
+
+          if move:
+            print(f"MOVE DETECTED -> {move.uci()}")
+            self.current_board.push(move)
+            self.reference_occupied = current_occupied
+            self.latest_move = move.uci()
+          else:
+            print("No valid move detected.")
 
         if self.show_piece_boxes:
           piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
@@ -116,8 +135,13 @@ class VisionThread(threading.Thread):
       self.frame_queue.put({
         "frame": processed_board_frame,
         "clock_frame": clock_frame_to_display,
-        "raw_frame": frame.copy()
+        "raw_frame": frame.copy(),
+        "move": self.latest_move
       })
+
+      # Clear latest move to not send twice
+      if self.latest_move:
+        self.latest_move = None
 
   def stop(self):
     """Safely shuts down the thread and camera."""
