@@ -63,8 +63,9 @@ class MainAdminDashboard(ctk.CTk):
     
     success, frame = self.cap.read()
     if success:
-      board_pil = Image.fromarray(frame)
-      clock_pil = Image.fromarray(frame)
+      frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+      board_pil = Image.fromarray(frame_rgb)
+      clock_pil = Image.fromarray(frame_rgb)
       board_ctk = ctk.CTkImage(light_image=board_pil, dark_image=board_pil, size=(600, 400))
       clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
 
