@@ -21,11 +21,13 @@ class VisionThread(threading.Thread):
 
     self.board_model = YOLO('brett.pt')
     self.clock_model = YOLO('klokke.pt')
+    self.piece_model = YOLO('brikker100.pt')
 
     self.history = deque(maxlen=10)
     self.M = None
     self.M_inv = None
     self.show_boxes = True
+    self.show_piece_boxes = True
 
     self.clock_roi = None
 
@@ -74,6 +76,9 @@ class VisionThread(threading.Thread):
       if self.M_inv is not None:
         # Board is locked
         chessboard.draw_grid(processed_board_frame, self.M_inv)
+        piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
+        if self.show_piece_boxes:
+          processed_board_frame = piece_results[0].plot(img=processed_board_frame)
 
       if self.clock_roi is not None:
         x, y, w, h = self.clock_roi
