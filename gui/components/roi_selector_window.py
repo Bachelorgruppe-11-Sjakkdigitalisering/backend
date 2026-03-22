@@ -53,7 +53,7 @@ class ROISelectorWindow(ctk.CTkToplevel):
     x1 = min(self.start_x, end_x)
     y1 = min(self.start_y, end_y)
     x2 = max(self.start_x, end_x)
-    y2 = max(self.start_x, end_x)
+    y2 = max(self.start_y, end_y)
 
     w = x2 - x1
     h = y2 - y1
