@@ -46,10 +46,17 @@ class MainAdminDashboard(ctk.CTk):
   def _build_main_view(self):
     self.main_frame = ctk.CTkFrame(self)
     self.main_frame.grid(row=0, column=1, sticky="nsew")
+
     self.game_card = GameInfoCard(self.main_frame, white_player="Dennis Johansen", black_player="Herman Lundby-Holen", status_text="Pending")
     self.game_card.grid(row=0, column=0, sticky="new")
     self.game_card.connect_live_feed_callback(self.on_live_feed_clicked)
     self.game_card.connect_stop_tracking_callback(self.on_stop_tracking_clicked)
+
+    self.control_frame = ctk.CTkFrame(self.main_frame)
+    self.control_frame.grid(row=1, column=0, sticky="nw")
+
+    self.btn_lock_board = ctk.CTkButton(self.control_frame, text="Lås brett perspektiv", command=self.vision_worker.lock_board)
+    self.btn_lock_board.pack(side="left")
 
   def on_live_feed_clicked(self):
     """Triggered whenever the 'Vis live feed' button is clicked."""
