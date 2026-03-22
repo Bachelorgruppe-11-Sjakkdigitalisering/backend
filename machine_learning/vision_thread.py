@@ -19,11 +19,14 @@ class VisionThread(threading.Thread):
     self.cap = None
 
     self.board_model = YOLO('brett.pt')
+    self.clock_model = YOLO('klokke.pt')
 
     self.history = deque(maxlen=10)
     self.M = None
     self.M_inv = None
     self.show_boxes = True
+
+    self.clock_roi = None
 
   def start_camera(self):
     self.cap = cv2.VideoCapture(self.camera_source)
@@ -39,6 +42,11 @@ class VisionThread(threading.Thread):
     else:
       print("Vision: Not enough data to lock board yet.")
 
+  def set_clock_roi(self, roi):
+    """Updates the ROI for the clock cutout. roi is a tuple like this: (x, y, w, h)"""
+    self.clock_roi = roi
+    print(f"Vision: Clock ROI set to {roi}")
+
   def run(self):
     """The main loop running in the background thread."""
     while self.is_running.is_set():
@@ -50,22 +58,32 @@ class VisionThread(threading.Thread):
       if not success:
         continue
 
-      processed_frame = frame.copy()
+      processed_board_frame = frame.copy()
+      clock_frame_to_display = None
 
       if self.M_inv is None or self.show_boxes:
         # Board is not locked
         results = self.board_model(frame, conf=0.05, verbose=False, iou=0.1)
-
         if self.show_boxes:
-          processed_frame = results[0].plot()
-
+          processed_board_frame = results[0].plot()
         corners = chessboard.extract_corners(results)
         if corners is not None:
           self.history.append(corners)
 
       if self.M_inv is not None:
         # Board is locked
-        chessboard.draw_grid(processed_frame, self.M_inv)
+        chessboard.draw_grid(processed_board_frame, self.M_inv)
+
+      if self.clock_roi is not None:
+        x, y, w, h = self.clock_roi
+        x, y = max(0, x), max(0, y)
+
+        clock_crop = frame[y:y+h, x:x+w]
+
+        clock_results = self.clock_model(clock_crop, verbose=False)
+
+        clock_frame_to_display = clock_results[0].plot()
+        # TODO: hent siffer med ClockLogic og prosesser med ClockState
 
       # Pass data to GUI queue
       # Clear out old frames if the GUI is reading too slowly
@@ -77,7 +95,9 @@ class VisionThread(threading.Thread):
       
       # Put fresh frame into queue
       self.frame_queue.put({
-        "frame": processed_frame
+        "frame": processed_board_frame,
+        "clock_frame": clock_frame_to_display,
+        "raw_frame": frame.copy()
       })
 
   def stop(self):
