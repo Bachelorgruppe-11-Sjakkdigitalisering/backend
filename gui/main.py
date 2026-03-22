@@ -4,6 +4,7 @@ import queue
 from PIL import Image
 from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
+from gui.components.roi_selector_window import ROISelectorWindow
 from machine_learning.vision_thread import VisionThread
 
 class MainAdminDashboard(ctk.CTk):
@@ -57,6 +58,23 @@ class MainAdminDashboard(ctk.CTk):
 
     self.btn_lock_board = ctk.CTkButton(self.control_frame, text="Lås brett perspektiv", command=self.vision_worker.lock_board)
     self.btn_lock_board.pack(side="left")
+
+    self.btn_set_clock = ctk.CTkButton(self.control_frame, text="Velg klokkeområde", command=self.open_roi_selector)
+    self.btn_set_clock.pack(side="left")
+
+  def open_roi_selector(self):
+    """Grabs one frame from the queue and opens the drawing tool."""
+    try:
+      # Grab raw and clean frame
+      data = self.frame_queue.get_nowait()
+      raw_frame = data["raw_frame"]
+
+      frame_rgb = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2RGB)
+      pil_image = Image.fromarray(frame_rgb)
+
+      ROISelectorWindow(self, pil_image, callback=self.vision_worker.set_clock_roi)
+    except queue.Empty:
+      print("No frame available yet")
 
   def on_live_feed_clicked(self):
     """Triggered whenever the 'Vis live feed' button is clicked."""
