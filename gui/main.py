@@ -121,6 +121,11 @@ class MainAdminDashboard(ctk.CTk):
       board_frame = data["frame"]
       clock_frame = data["clock_frame"]
       move_data = data.get("move_data")
+      clock_info = data.get("clock_info")
+
+      if clock_info and clock_info["status"] == "active":
+        self.white_time = clock_info.get("white", self.white_time)
+        self.black_time = clock_info.get("black", self.black_time)
 
       if move_data:
         move_uci = move_data["move_uci"]
