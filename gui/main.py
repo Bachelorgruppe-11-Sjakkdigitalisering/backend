@@ -25,10 +25,11 @@ class MainAdminDashboard(ctk.CTk):
     self.current_board_id = 1
     self.white_player = "Dennis Johansen"
     self.black_player = "Herman Lundby-Holen"
-    self.white_time = "10:00"
-    self.black_time = "10:00"
+    self.white_time = ""
+    self.black_time = ""
 
     self._build_ui()
+    self._poll_vision_queue()
 
   def _build_ui(self):
     # Configure layout of 2 rows and 2 columns
@@ -103,33 +104,27 @@ class MainAdminDashboard(ctk.CTk):
     if self.live_window is None or not self.live_window.winfo_exists():
       self.live_window = LiveFeedWindow(self)
       self.game_card.update_status("Status: Live stream active")
-      self._stream_to_live_window()
     else:
       self.live_window.focus()
 
-  def _stream_to_live_window(self):
-    """Pulls frames and sends them to the popup window."""
-    # Stop loop if window was closed
-    if self.live_window is None or not self.live_window.winfo_exists():
-      self.game_card.update_status("Status: Tracking Live (Move 14)")
-      self.live_window = None
-      return
-    
+  def _poll_vision_queue(self):
+    """
+    Constantly runs in the background.
+    Handles game logic all the time, and updates the UI only if live feed window is open.
+    """
     try:
-      # Grab latest frame from background thread
       data = self.frame_queue.get_nowait()
-      board_frame = data["frame"]
-      clock_frame = data["clock_frame"]
-      move_data = data.get("move_data")
-      clock_info = data.get("clock_info")
 
+      # Clock state
+      clock_info = data.get("clock_info")
       if clock_info and clock_info["status"] == "active":
         self.white_time = clock_info.get("white", self.white_time)
         self.black_time = clock_info.get("black", self.black_time)
-
+      
+      # Handles moves and api
+      move_data = data.get("move_data")
       if move_data:
         move_uci = move_data["move_uci"]
-
         self.game_card.update_status(f"Status: Siste trekk {move_uci}")
 
         payload = {
@@ -142,31 +137,39 @@ class MainAdminDashboard(ctk.CTk):
           "black_time": self.black_time,
           "is_active": True
         }
-
         self.api_client.sync_game_state(payload)
 
-      board_rgb = cv2.cvtColor(board_frame, cv2.COLOR_BGR2RGB)
-      board_pil = Image.fromarray(board_rgb)
-      board_ctk = ctk.CTkImage(light_image=board_pil, dark_image=board_pil, size=(600, 400))
-
-      clock_rgb = cv2.cvtColor(clock_frame, cv2.COLOR_BGR2RGB)
-      clock_pil = Image.fromarray(clock_rgb)
-
-      # Resize based on the crops aspect ratio
-      img_w, img_h = clock_pil.size
-      if img_w > 0 and img_h > 0:
-        ratio = 600 / img_w
-        clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, int(img_h * ratio)))
-      else:
-        clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
-
-      self.live_window.update_feeds(board_ctk, clock_ctk)
+      # Handle live feed UI
+      if self.live_window is not None and self.live_window.winfo_exists():
+        self._update_live_video(data["frame"], data["clock_frame"])
+    
     except queue.Empty:
-      # If background thread has not produced new frame, just skip
       pass
+    
+    # Loop again in approx 30ms
+    self.after(30, self._poll_vision_queue)
 
-    # Loop again in aprox 30ms
-    self.after(30, self._stream_to_live_window)
+  def _update_live_video(self, board_frame, clock_frame):
+    """Helper to handle image conversion and UI drawing."""
+    # Convert Board
+    board_rgb = cv2.cvtColor(board_frame, cv2.COLOR_BGR2RGB)
+    board_pil = Image.fromarray(board_rgb)
+    board_ctk = ctk.CTkImage(light_image=board_pil, dark_image=board_pil, size=(600, 400))
+
+    # Convert Clock
+    clock_rgb = cv2.cvtColor(clock_frame, cv2.COLOR_BGR2RGB)
+    clock_pil = Image.fromarray(clock_rgb)
+
+    # Resize dynamically
+    img_w, img_h = clock_pil.size
+    if img_w > 0 and img_h > 0:
+      ratio = 600 / img_w
+      clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, int(img_h * ratio)))
+    else:
+      clock_ctk = ctk.CTkImage(light_image=clock_pil, dark_image=clock_pil, size=(600, 150))
+
+    # Push to popup window
+    self.live_window.update_feeds(board_ctk, clock_ctk)
 
   def on_closing(self):
     self.vision_worker.stop()
