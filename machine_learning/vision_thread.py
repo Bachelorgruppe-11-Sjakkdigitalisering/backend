@@ -147,7 +147,12 @@ class VisionThread(threading.Thread):
         print(f"MOVE DETECTED on attempt {self.check_counter} -> {move.uci()}")
         self.current_board.push(move)
         self.reference_occupied = current_occupied
-        self.latest_move = move.uci()
+        game = chess.pgn.Game.from_board(self.current_board)
+        self.latest_move = {
+          "move_uci": move.uci(),
+          "fen": self.current_board.fen(),
+          "pgn": str(game)
+        }
         self.is_checking_move = False
 
       elif self.check_counter >= self.MAX_CHECKS:
@@ -184,7 +189,7 @@ class VisionThread(threading.Thread):
       "frame": board_display,
       "clock_frame": clock_display,
       "raw_frame": raw_frame.copy(),
-      "move": self.latest_move
+      "move_data": self.latest_move
     })
 
     if self.latest_move:

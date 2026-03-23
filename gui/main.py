@@ -6,6 +6,7 @@ from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
 from machine_learning.vision_thread import VisionThread
+from network.api_client import ChessAPIClient
 
 class MainAdminDashboard(ctk.CTk):
   def __init__(self):
@@ -18,6 +19,14 @@ class MainAdminDashboard(ctk.CTk):
     self.frame_queue = queue.Queue()
     self.vision_worker = VisionThread(self.frame_queue, camera_source=0)
     self.vision_worker.start_camera()
+
+    # Initialize API and dummy state data
+    self.api_client = ChessAPIClient()
+    self.current_board_id = 1
+    self.white_player = "Dennis Johansen"
+    self.black_player = "Herman Lundby-Holen"
+    self.white_time = "10:00"
+    self.black_time = "10:00"
 
     self._build_ui()
 
@@ -111,6 +120,25 @@ class MainAdminDashboard(ctk.CTk):
       data = self.frame_queue.get_nowait()
       board_frame = data["frame"]
       clock_frame = data["clock_frame"]
+      move_data = data.get("move_data")
+
+      if move_data:
+        move_uci = move_data["move_uci"]
+
+        self.game_card.update_status(f"Status: Siste trekk {move_uci}")
+
+        payload = {
+          "board_id": self.current_board_id,
+          "white_player_name": self.white_player,
+          "black_player_name": self.black_player,
+          "fen": move_data["fen"],
+          "pgn": move_data["pgn"],
+          "white_time": self.white_time,
+          "black_time": self.black_time,
+          "is_active": True
+        }
+
+        self.api_client.sync_game_state(payload)
 
       board_rgb = cv2.cvtColor(board_frame, cv2.COLOR_BGR2RGB)
       board_pil = Image.fromarray(board_rgb)
