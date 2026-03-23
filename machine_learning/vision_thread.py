@@ -7,6 +7,8 @@ import numpy as np
 import chessboard.chessboard as chessboard
 import moves.moves as moves
 from machine_learning.motion_detector import MotionDetector
+from clock.logic import ClockLogic
+from clock.state import ClockState
 from ultralytics import YOLO
 from collections import deque
 
@@ -50,6 +52,8 @@ class VisionThread(threading.Thread):
 
     # Clock state
     self.clock_roi = None
+    self.clock_state = ClockState()
+    self.latest_clock_info = None
 
   def start_camera(self):
     """Starts the camera stream."""
@@ -175,6 +179,11 @@ class VisionThread(threading.Thread):
     clock_crop = frame[y:y+h, x:x+w]
 
     clock_results = self.clock_model(clock_crop, verbose=False)
+
+    if len(clock_results) > 0:
+      raw_left, raw_right = ClockLogic.detections_to_time(clock_results[0], w)
+      self.latest_clock_info = self.clock_state.process(raw_left, raw_right)
+
     return clock_results[0].plot()
   
   def _send_to_gui(self, raw_frame, board_display, clock_display):
@@ -189,7 +198,8 @@ class VisionThread(threading.Thread):
       "frame": board_display,
       "clock_frame": clock_display,
       "raw_frame": raw_frame.copy(),
-      "move_data": self.latest_move
+      "move_data": self.latest_move,
+      "clock_info": self.latest_clock_info
     })
 
     if self.latest_move:
