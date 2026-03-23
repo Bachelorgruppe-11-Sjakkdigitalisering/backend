@@ -11,7 +11,7 @@ class ChessAPIClient:
     Takes the game data dictionary and sends it in a separate background thread.
     This makes sure the GUI neveer freezes while waiting for the network.
     """
-    threading.Thread(target=self._post_data, args=(payload), daemon=True).start()
+    threading.Thread(target=self._post_data, args=(payload,), daemon=True).start()
 
   def _post_data(self, payload):
     try:
