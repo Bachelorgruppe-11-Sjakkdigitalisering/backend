@@ -187,4 +187,4 @@ async def create_player(player: Player, session: Session = Depends(get_session))
   print(f"Ny spiller lagt til: {player.name} (ID: {player.id})")
   return player
 
-# Run with: python -m uvicorn api.main:app --reload --port 8000   
+# Run with: python -m uvicorn api.main:app --reload --port 8000
