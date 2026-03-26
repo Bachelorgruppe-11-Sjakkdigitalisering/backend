@@ -39,21 +39,13 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
 def detect_castling(moved_from, moved_to, current_board):
     for move in current_board.legal_moves:
         if current_board.is_castling(move):
-            start_sq = chess.square_name(move.from_square)
-            end_sq = chess.square_name(move.to_square)
-            
-            if start_sq in moved_from and end_sq in moved_to:
-                return move
+            return move
     return None
 
 def detect_en_passant(moved_from, moved_to, current_board):
     for move in current_board.legal_moves:
         if current_board.is_en_passant(move):
-            start_sq = chess.square_name(move.from_square)
-            end_sq = chess.square_name(move.to_square)
-            
-            if start_sq in moved_from and end_sq in moved_to:
-                return move
+            return move
     return None
 
 def check_promotion(move_string, current_board):
@@ -74,16 +66,21 @@ def detect_move (reference_occupied, current_occupied, current_board):
 
     # rokkade-sjekk
     if len(moved_from) == 2 and len(moved_to) == 2:
+        print("Sjekker rokade")
         move = detect_castling(moved_from, moved_to, current_board)
-        if move: return move
+        if move: 
+            print("Fant rokade trekk og returnerer den")
+            return move
 
     # en passant-sjekk
     elif len(moved_from) == 2 and len(moved_to) == 1:
+        print("Sjekker en passant")
         move = detect_en_passant(moved_from, moved_to, current_board)
         if move: return move
 
     # vanlig trekk-sjekk altså flytte brikke til ledig felt
     if len(moved_from) == 1 and len(moved_to) == 1:
+        print("Sjekker vanlig trekk")
         f_row, f_col = moved_from[0]
         t_row, t_col = moved_to[0]
         start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
@@ -91,6 +88,7 @@ def detect_move (reference_occupied, current_occupied, current_board):
 
     # vanlig capture-sjekk 
     elif len(moved_from) == 1 and len(moved_to) == 0:
+        print("Sjekker capture")
         f_row, f_col = moved_from[0]
         temp_start = f"{FILES[f_col]}{RANKS[f_row]}"
         
@@ -106,6 +104,7 @@ def detect_move (reference_occupied, current_occupied, current_board):
     if start_sq and end_sq:
         move_string = start_sq + end_sq
         #promoterings-sjekk
+        print("Sjekker promotering")
         promoted_move = check_promotion(move_string, current_board)
         if promoted_move:
             return promoted_move
