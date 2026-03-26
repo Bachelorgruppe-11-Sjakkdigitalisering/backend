@@ -36,19 +36,60 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
                 
     return list(set(occupied))
 
+def detect_castling(moved_from, moved_to, current_board):
+    for move in current_board.legal_moves:
+        if current_board.is_castling(move):
+            start_sq = chess.square_name(move.from_square)
+            end_sq = chess.square_name(move.to_square)
+            
+            if start_sq in moved_from and end_sq in moved_to:
+                return move
+    return None
+
+def detect_en_passant(moved_from, moved_to, current_board):
+    for move in current_board.legal_moves:
+        if current_board.is_en_passant(move):
+            start_sq = chess.square_name(move.from_square)
+            end_sq = chess.square_name(move.to_square)
+            
+            if start_sq in moved_from and end_sq in moved_to:
+                return move
+    return None
+
+def check_promotion(move_string, current_board):
+ 
+    promo_move_q = chess.Move.from_uci(move_string + "q")
+    if promo_move_q in current_board.legal_moves:
+        # Standardiserer til å alltid promotere til Dronning inntil videre.
+        return promo_move_q
+    return None
+
 def detect_move (reference_occupied, current_occupied, current_board):
     moved_from = [r for r in reference_occupied if r not in current_occupied]
     moved_to = [r for r in current_occupied if r not in reference_occupied]
 
     start_sq = None
     end_sq = None
+    move = None
 
+    # rokkade-sjekk
+    if len(moved_from) == 2 and len(moved_to) == 2:
+        move = detect_castling(moved_from, moved_to, current_board)
+        if move: return move
+
+    # en passant-sjekk
+    elif len(moved_from) == 2 and len(moved_to) == 1:
+        move = detect_en_passant(moved_from, moved_to, current_board)
+        if move: return move
+
+    # vanlig trekk-sjekk altså flytte brikke til ledig felt
     if len(moved_from) == 1 and len(moved_to) == 1:
         f_row, f_col = moved_from[0]
         t_row, t_col = moved_to[0]
         start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
         end_sq = f"{FILES[t_col]}{RANKS[t_row]}"
 
+    # vanlig capture-sjekk 
     elif len(moved_from) == 1 and len(moved_to) == 0:
         f_row, f_col = moved_from[0]
         temp_start = f"{FILES[f_col]}{RANKS[f_row]}"
@@ -64,6 +105,11 @@ def detect_move (reference_occupied, current_occupied, current_board):
 
     if start_sq and end_sq:
         move_string = start_sq + end_sq
+        #promoterings-sjekk
+        promoted_move = check_promotion(move_string, current_board)
+        if promoted_move:
+            return promoted_move
+        
         move = chess.Move.from_uci(move_string)
         if move in current_board.legal_moves:
             return move
