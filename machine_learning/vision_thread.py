@@ -29,7 +29,7 @@ class VisionThread(threading.Thread):
     # AI models
     self.board_model = YOLO('brett.pt')
     self.clock_model = YOLO('klokke.pt')
-    self.piece_model = YOLO('brikker100.pt')
+    self.piece_model = YOLO('fargebrikker.onnx', task='detect')
 
     # Board calibration state
     self.history = deque(maxlen=10)

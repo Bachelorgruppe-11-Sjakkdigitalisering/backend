@@ -10,11 +10,12 @@ RANKS = "87654321"
 
 def get_occupied_squares_on_raw_frame(frame, model, M):
     results = model(frame, conf=0.3, verbose=False)
-    occupied = []
+    occupied = {}
     
     if len(results[0].boxes) > 0:
         boxes = results[0].boxes.xyxy.cpu().numpy()
-        for box in boxes:
+        classes = results[0].boxes.cls.cpu().numpy()
+        for box, cls in zip(boxes, classes):
             # Vi bruker bunnen av boksen (px, py) fordi det er der brikken 
             # faktisk berører brettet.
             h = box[3] - box[1] # høyden på boksen
@@ -32,9 +33,9 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
             row = int(ty // 100)
             
             if 0 <= col <= 7 and 0 <= row <= 7:
-                occupied.append((row, col))
+                occupied[(row, col)] = int(cls)
                 
-    return list(set(occupied))
+    return occupied
 
 def detect_castling(moved_from, moved_to, current_board):
     for move in current_board.legal_moves:
@@ -58,49 +59,62 @@ def check_promotion(move_string, current_board):
 
 def detect_move (reference_occupied, current_occupied, current_board):
     moved_from = [r for r in reference_occupied if r not in current_occupied]
-    moved_to = [r for r in current_occupied if r not in reference_occupied]
+    moved_to_empty = [pos for pos in current_occupied if pos not in reference_occupied]
+    moved_to_changed = [pos for pos in current_occupied if pos in reference_occupied and current_occupied[pos] != reference_occupied[pos]]
+    moved_to_candidates = moved_to_empty + moved_to_changed
+
 
     start_sq = None
     end_sq = None
     move = None
 
     # rokkade-sjekk
-    if len(moved_from) == 2 and len(moved_to) == 2:
+    if len(moved_from) == 2 and len(moved_to_empty) == 2:
         print("Sjekker rokade")
-        move = detect_castling(moved_from, moved_to, current_board)
+        move = detect_castling(moved_from, moved_to_empty, current_board)
         if move: 
             print("Fant rokade trekk og returnerer den")
             return move
 
     # en passant-sjekk
-    elif len(moved_from) == 2 and len(moved_to) == 1:
+    elif len(moved_from) == 2 and len(moved_to_empty) == 1:
         print("Sjekker en passant")
-        move = detect_en_passant(moved_from, moved_to, current_board)
+        move = detect_en_passant(moved_from, moved_to_empty, current_board)
         if move: return move
 
     # vanlig trekk-sjekk altså flytte brikke til ledig felt
-    if len(moved_from) == 1 and len(moved_to) == 1:
+    if len(moved_from) == 1 and len(moved_to_empty) == 1:
         print("Sjekker vanlig trekk")
         f_row, f_col = moved_from[0]
-        t_row, t_col = moved_to[0]
+        t_row, t_col = moved_to_empty[0]
         start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
         end_sq = f"{FILES[t_col]}{RANKS[t_row]}"
 
     # vanlig capture-sjekk 
-    elif len(moved_from) == 1 and len(moved_to) == 0:
+    elif len(moved_from) == 1 and len(moved_to_empty) == 0:
         print("Sjekker capture")
         f_row, f_col = moved_from[0]
-        temp_start = f"{FILES[f_col]}{RANKS[f_row]}"
+        start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
         
-        possible_moves = [m for m in current_board.legal_moves if m.uci().startswith(temp_start)]
-        for m in possible_moves:
-            dest_uci = m.uci()[2:4] 
-            d_col = FILES.find(dest_uci[0])
-            d_row = RANKS.find(dest_uci[1])
-            if (d_row, d_col) in current_occupied:
-                start_sq = temp_start
-                end_sq = dest_uci
-
+        # YOLO la merke til at brikken på destinasjonen byttet klasse
+        if len(moved_to_changed) == 1:
+            print("Scenario A")
+            t_row, t_col = moved_to_changed[0]
+            end_sq = f"{FILES[t_col]}{RANKS[t_row]}"
+            
+        # YOLO merket ikke at brikken byttet klasse (Fallback gjetting via python-chess)
+        elif len(moved_to_changed) == 0:
+            print("YOLO så ikke hvem som ble slått. Gjetter basert på lovlige trekk...")
+            possible_captures = [m for m in current_board.legal_moves if m.uci().startswith(start_sq) and current_board.is_capture(m)]
+            
+            if len(possible_captures) == 1:
+                return possible_captures[0]
+            else:
+                print("Klarte ikke å avgjøre capture automatisk (flere eller null mulige captures)")
+                return None
+        else:
+            print(f"Feil: YOLO rapporterte at {len(moved_to_changed)} brikker byttet klasse samtidig. For mye støy.")
+            return None
     if start_sq and end_sq:
         move_string = start_sq + end_sq
         #promoterings-sjekk
