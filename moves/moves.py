@@ -7,6 +7,22 @@ import requests
 FILES = "abcdefgh"
 RANKS = "87654321"
 
+#avhenger at modellen som kjøres har disse id-ene til respektive brikker
+COLOR_MAP = {
+    0: "black", #  black-bishop
+    1: "black", #  black-king
+    2: "black", #  black-knight
+    3: "black", #  black-pawn
+    4: "black", #  black-queen
+    5: "black", #  black-rook
+    6: "white", #  white-bishop
+    7: "white", #  white-king
+    8: "white", #  white-knight
+    9: "white", #  white-pawn
+    10: "white", # white-queen
+    11: "white"  # white-rook
+}
+
 
 def get_occupied_squares_on_raw_frame(frame, model, M):
     results = model(frame, conf=0.3, verbose=False)
@@ -33,7 +49,9 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
             row = int(ty // 100)
             
             if 0 <= col <= 7 and 0 <= row <= 7:
-                occupied[(row, col)] = int(cls)
+                # Gjør om klasse-ID til farge.
+                piece_color = COLOR_MAP.get(int(cls), "unknown") 
+                occupied[(row, col)] = piece_color
                 
     return occupied
 
