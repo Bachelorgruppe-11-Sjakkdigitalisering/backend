@@ -5,6 +5,7 @@ from PIL import Image
 from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
+from gui.pages.main_page import MainPage
 from machine_learning.vision_thread import VisionThread
 from network.api_client import ChessAPIClient
 
@@ -44,9 +45,6 @@ class MainAdminDashboard(ctk.CTk):
     self.btn_nav1 = ctk.CTkButton(self.nav_frame, text="Active Game")
     self.btn_nav1.pack(pady=10, padx=20)
 
-    # Main view
-    self._build_main_view()
-
     # System logs
     self.log_frame = ctk.CTkFrame(self)
     self.log_frame.grid(row=1, column=1, sticky="nsew")
@@ -54,35 +52,40 @@ class MainAdminDashboard(ctk.CTk):
     self.log_sample = ctk.CTkLabel(self.log_frame, text="12:00:03 - Her er et eksempel på en logg.")
     self.log_sample.pack()
 
-  def _build_main_view(self):
-    self.main_frame = ctk.CTkFrame(self)
-    self.main_frame.grid(row=0, column=1, sticky="nsew")
+    # Main view
+    self.main_container = ctk.CTkFrame(self, fg_color="transparent")
+    self.main_container.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+    self.main_container.grid_rowconfigure(0, weight=1)
+    self.main_container.grid_columnconfigure(0, weight=1)
 
-    self.game_card = GameInfoCard(self.main_frame, white_player="Dennis Johansen", black_player="Herman Lundby-Holen", status_text="Pending")
-    self.game_card.grid(row=0, column=0, sticky="new")
-    self.game_card.connect_live_feed_callback(self.on_live_feed_clicked)
-    self.game_card.connect_stop_tracking_callback(self.on_stop_tracking_clicked)
+    # Initialize all pages and stack them in the container
+    self.pages = {}
+    for PageClass in [MainPage]:
+      page_name = PageClass.__name__
+      frame = PageClass(parent=self.main_container, controller=self)
+      self.pages[page_name] = frame
+      frame.grid(row=0, column=0, sticky="nsew")
 
-    self.control_frame = ctk.CTkFrame(self.main_frame)
-    self.control_frame.grid(row=1, column=0, sticky="nw")
+    self.show_page("MainPage")
 
-    self.btn_lock_board = ctk.CTkButton(self.control_frame, text="Lås brett perspektiv", command=self.vision_worker.lock_board)
-    self.btn_lock_board.pack(side="left")
+  def show_page(self, page_name):
+    """Brings the requested page to the front of the stacking order."""
+    frame = self.pages[page_name]
+    frame.tkraise()
 
-    self.btn_set_clock = ctk.CTkButton(self.control_frame, text="Velg klokkeområde", command=self.open_roi_selector)
-    self.btn_set_clock.pack(side="left")
-
-    self.btn_toggle_pieces = ctk.CTkButton(self.control_frame, text="Skjul brikker", command=self.toggle_piece_boxes)
-    self.btn_toggle_pieces.pack(side="left")
+  def get_page(self, page_name: str):
+    """Fetches a view instance."""
+    return self.pages.get(page_name)
 
   def toggle_piece_boxes(self):
     """Toggles the visibility of the YOLO piece bounding boxes."""
+    main_page = self.get_page("MainPage")
     if self.vision_worker.show_piece_boxes:
       self.vision_worker.show_piece_boxes = False
-      self.btn_toggle_pieces.configure(text="Vis brikker")
+      main_page.set_toggle_button_text("Vis brikker")
     else:
       self.vision_worker.show_piece_boxes = True
-      self.btn_toggle_pieces.configure(text="Skjul brikker")
+      main_page.set_toggle_button_text("Skjul brikker")
 
   def open_roi_selector(self):
     """Grabs one frame from the queue and opens the drawing tool."""
@@ -103,7 +106,7 @@ class MainAdminDashboard(ctk.CTk):
     print("Opening live feed window.")
     if self.live_window is None or not self.live_window.winfo_exists():
       self.live_window = LiveFeedWindow(self)
-      self.game_card.update_status("Status: Live stream active")
+      self.pages["MainPage"].game_card.update_status("Status: Live stream active")
     else:
       self.live_window.focus()
 
@@ -125,7 +128,9 @@ class MainAdminDashboard(ctk.CTk):
       move_data = data.get("move_data")
       if move_data:
         move_uci = move_data["move_uci"]
-        self.game_card.update_status(f"Status: Siste trekk {move_uci}")
+        main_page = self.get_page("MainPage")
+        if main_page:
+          main_page.set_game_status(f"Status: Siste trekk {move_uci}")
 
         payload = {
           "board_id": self.current_board_id,
@@ -177,7 +182,9 @@ class MainAdminDashboard(ctk.CTk):
 
   def on_stop_tracking_clicked(self):
     print("Disabling tracking.")
-    self.game_card.update_status("Status: Paused.")
+    main_page = self.get_page("MainPage")
+    if main_page:
+      main_page.set_game_status("Status: Paused.")
 
 app = MainAdminDashboard()
 app.mainloop()
