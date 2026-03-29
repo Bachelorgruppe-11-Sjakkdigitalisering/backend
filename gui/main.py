@@ -16,25 +16,18 @@ class MainAdminDashboard(ctk.CTk):
     self.geometry("1100x800")
     self.title("Sjakkdigitalisering Admin Panel")
 
-    self.live_window = None
-    
-    self.frame_queue = queue.Queue()
-    self.vision_worker = VisionThread(self.frame_queue, camera_source=0)
-    self.vision_worker.start_camera()
-
-    # Initialize API and dummy state data
     self.api_client = ChessAPIClient()
-    self.current_board_id = 1
-    self.white_player = "Dennis Johansen"
-    self.black_player = "Herman Lundby-Holen"
-    self.white_time = ""
-    self.black_time = ""
+    self.live_window = None
 
-    # Pairings for the tournament
-    self.tournament_pairings = []
+    # State management
+    self.tournament_pairings = [] # List of planned/all games
+    
+    # Dictionary to hold active vision threads and queues
+    # Format: { game_id: {"queue": Queue, "worker": VisionThread, "pairing_data": dict} }
+    self.active_sessions = {} 
 
     self._build_ui()
-    self._poll_vision_queue()
+    self._poll_vision_queues() 
 
   def _build_ui(self):
     # Configure layout of 2 rows and 2 columns
@@ -116,46 +109,50 @@ class MainAdminDashboard(ctk.CTk):
     else:
       self.live_window.focus()
 
-  def _poll_vision_queue(self):
+  def _poll_vision_queues(self):
     """
     Constantly runs in the background.
     Handles game logic all the time, and updates the UI only if live feed window is open.
     """
-    try:
-      data = self.frame_queue.get_nowait()
+    for game_id, session in self.active_sessions.items():
+      queue = session["queue"]
+      pairing = session["pairing_data"]
 
-      # Clock state
-      clock_info = data.get("clock_info")
-      if clock_info and clock_info["status"] == "active":
-        self.white_time = clock_info.get("white", self.white_time)
-        self.black_time = clock_info.get("black", self.black_time)
+      try:
+        data = queue.get_nowait()
+
+        # Clock state
+        clock_info = data.get("clock_info")
+        if clock_info and clock_info["status"] == "active":
+          self.white_time = clock_info.get("white", self.white_time)
+          self.black_time = clock_info.get("black", self.black_time)
+        
+        # Handles moves and api
+        move_data = data.get("move_data")
+        if move_data:
+          move_uci = move_data["move_uci"]
+          main_page = self.get_page("MainPage")
+          if main_page:
+            main_page.set_game_status(f"Status: Siste trekk {move_uci}")
+
+          payload = {
+            "board_id": self.current_board_id,
+            "white_player_name": self.white_player,
+            "black_player_name": self.black_player,
+            "fen": move_data["fen"],
+            "pgn": move_data["pgn"],
+            "white_time": self.white_time,
+            "black_time": self.black_time,
+            "is_active": True
+          }
+          self.api_client.sync_game_state(payload)
+
+        # Handle live feed UI
+        if self.live_window is not None and self.live_window.winfo_exists():
+          self._update_live_video(data["frame"], data["clock_frame"])
       
-      # Handles moves and api
-      move_data = data.get("move_data")
-      if move_data:
-        move_uci = move_data["move_uci"]
-        main_page = self.get_page("MainPage")
-        if main_page:
-          main_page.set_game_status(f"Status: Siste trekk {move_uci}")
-
-        payload = {
-          "board_id": self.current_board_id,
-          "white_player_name": self.white_player,
-          "black_player_name": self.black_player,
-          "fen": move_data["fen"],
-          "pgn": move_data["pgn"],
-          "white_time": self.white_time,
-          "black_time": self.black_time,
-          "is_active": True
-        }
-        self.api_client.sync_game_state(payload)
-
-      # Handle live feed UI
-      if self.live_window is not None and self.live_window.winfo_exists():
-        self._update_live_video(data["frame"], data["clock_frame"])
-    
-    except queue.Empty:
-      pass
+      except queue.Empty:
+        continue
     
     # Loop again in approx 30ms
     self.after(30, self._poll_vision_queue)
@@ -191,6 +188,38 @@ class MainAdminDashboard(ctk.CTk):
     main_page = self.get_page("MainPage")
     if main_page:
       main_page.set_game_status("Status: Paused.")
+
+  def handle_new_pairing(self, data: dict):
+    """
+    Receives pairing data from the View, validates it, and stores it.
+    """
+    if not data.get("white_name") or not data.get("black_name") or not data.get("camera_id"):
+      print("Feil: Mangler spillernavn eller kamera ID!")
+      return
+    
+    # Assign a mock Game ID 
+    # TODO: dette må kanskje komme fra database i fremtiden??
+    game_id = len(self.tournament_pairings) + 1
+    
+    new_pairing = {
+      "game_id": game_id,
+      "camera_id": int(data["camera_id"]),
+      "white_name": data["white_name"],
+      "white_id": data["white_id"],
+      "black_name": data["black_name"],
+      "black_id": data["black_id"],
+      "status": "planned" # Can be 'planned', 'active', or 'finished'
+    }
+
+    # 4. Save to controller state
+    self.tournament_pairings.append(new_pairing)
+    print(f"La til nytt oppsett: {new_pairing}")
+
+    # 5. Tell the view to update its UI
+    pairings_page = self.get_page("PairingsPage")
+    if pairings_page:
+      pairings_page.clear_inputs()
+      pairings_page.render_pairings_list(self.tournament_pairings)
 
 app = MainAdminDashboard()
 app.mainloop()
