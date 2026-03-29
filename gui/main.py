@@ -6,6 +6,7 @@ from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
 from gui.pages.main_page import MainPage
+from gui.pages.pairings_page import PairingsPage
 from machine_learning.vision_thread import VisionThread
 from network.api_client import ChessAPIClient
 
@@ -29,6 +30,9 @@ class MainAdminDashboard(ctk.CTk):
     self.white_time = ""
     self.black_time = ""
 
+    # Pairings for the tournament
+    self.tournament_pairings = []
+
     self._build_ui()
     self._poll_vision_queue()
 
@@ -42,8 +46,10 @@ class MainAdminDashboard(ctk.CTk):
     # Left navigation drawer
     self.nav_frame = ctk.CTkFrame(self)
     self.nav_frame.grid(row=0, column=0, rowspan=2, sticky="nsew")
-    self.btn_nav1 = ctk.CTkButton(self.nav_frame, text="Active Game")
+    self.btn_nav1 = ctk.CTkButton(self.nav_frame, text="Aktive kamper", command=lambda: self.show_page("MainPage"))
     self.btn_nav1.pack(pady=10, padx=20)
+    self.btn_nav2 = ctk.CTkButton(self.nav_frame, text="Oppsett av kamper", command=lambda: self.show_page("PairingsPage"))
+    self.btn_nav2.pack(pady=10, padx=20)
 
     # System logs
     self.log_frame = ctk.CTkFrame(self)
@@ -60,7 +66,7 @@ class MainAdminDashboard(ctk.CTk):
 
     # Initialize all pages and stack them in the container
     self.pages = {}
-    for PageClass in [MainPage]:
+    for PageClass in [MainPage, PairingsPage]:
       page_name = PageClass.__name__
       frame = PageClass(parent=self.main_container, controller=self)
       self.pages[page_name] = frame
