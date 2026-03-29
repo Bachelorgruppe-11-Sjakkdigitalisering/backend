@@ -100,9 +100,20 @@ class PairingsPage(ctk.CTkFrame):
       card.pack(fill="x", padx=10, pady=5)
 
       text = f"Kamera {pairing['camera_id']}: {pairing['white_name']} vs {pairing['black_name']}"
-      
       label = ctk.CTkLabel(card, text=text)
       label.pack(side="left", padx=10, pady=10)
+
+      if pairing.get("status") != "active":
+        btn_start = ctk.CTkButton(
+          card,
+          text="Start tracking",
+          width=120,
+          command=lambda game_id=pairing['game_id']: self.controller.start_tracking_game(game_id)
+        )
+        btn_start.pack(side="right", padx=10, pady=10)
+      else:
+        status_label = ctk.CTkLabel(card, text="Aktiv", text_color="green")
+        status_label.pack(side="right", padx=10, pady=10)
 
       # Add the card to our tracking list so we can delete it later
       self.pairing_widgets.append(card)

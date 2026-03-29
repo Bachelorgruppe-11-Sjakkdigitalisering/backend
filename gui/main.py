@@ -76,36 +76,44 @@ class MainAdminDashboard(ctk.CTk):
     """Fetches a view instance."""
     return self.pages.get(page_name)
 
-  def toggle_piece_boxes(self):
+  def toggle_piece_boxes(self, game_id: int):
     """Toggles the visibility of the YOLO piece bounding boxes."""
+    worker = self.active_sessions[game_id]["worker"]
     main_page = self.get_page("MainPage")
-    if self.vision_worker.show_piece_boxes:
-      self.vision_worker.show_piece_boxes = False
-      main_page.set_toggle_button_text("Vis brikker")
+    
+    if worker.show_piece_boxes:
+      worker.show_piece_boxes = False
+      main_page.update_toggle_button_text(game_id, "Vis brikker")
     else:
-      self.vision_worker.show_piece_boxes = True
-      main_page.set_toggle_button_text("Skjul brikker")
+      worker.show_piece_boxes = True
+      main_page.update_toggle_button_text(game_id, "Skjul brikker")
 
-  def open_roi_selector(self):
+  def open_roi_selector(self, game_id: int):
     """Grabs one frame from the queue and opens the drawing tool."""
-    try:
-      # Grab raw and clean frame
-      data = self.frame_queue.get_nowait()
-      raw_frame = data["raw_frame"]
+    session = self.active_sessions.get(game_id)
+    if not session: return
 
-      frame_rgb = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2RGB)
+    try:
+      # Grab a frame from this specific game's queue
+      data = session["queue"].get_nowait()
+      frame_rgb = cv2.cvtColor(data["raw_frame"], cv2.COLOR_BGR2RGB)
       pil_image = Image.fromarray(frame_rgb)
 
-      ROISelectorWindow(self, pil_image, callback=self.vision_worker.set_clock_roi)
+      # Pass the specific worker's callback
+      ROISelectorWindow(self, pil_image, callback=session["worker"].set_clock_roi)
     except queue.Empty:
-      print("No frame available yet")
+      print("No frame available yet for this camera.")
 
-  def on_live_feed_clicked(self):
+  def on_live_feed_clicked(self, game_id: int):
     """Triggered whenever the 'Vis live feed' button is clicked."""
-    print("Opening live feed window.")
+    print(f"Opening live feed window for Game {game_id}.")
+    # TODO: LiveFeedWindow trenger å vite hvilket game den viser
     if self.live_window is None or not self.live_window.winfo_exists():
       self.live_window = LiveFeedWindow(self)
-      self.pages["MainPage"].game_card.update_status("Status: Live stream active")
+      
+      main_page = self.get_page("MainPage")
+      if main_page:
+          main_page.update_game_status(game_id, "Status: Live stream active")
     else:
       self.live_window.focus()
 
@@ -115,47 +123,48 @@ class MainAdminDashboard(ctk.CTk):
     Handles game logic all the time, and updates the UI only if live feed window is open.
     """
     for game_id, session in self.active_sessions.items():
-      queue = session["queue"]
+      q = session["queue"]
       pairing = session["pairing_data"]
 
       try:
-        data = queue.get_nowait()
+        data = q.get_nowait()
 
-        # Clock state
+        # Update Clock State for this specific game
         clock_info = data.get("clock_info")
         if clock_info and clock_info["status"] == "active":
-          self.white_time = clock_info.get("white", self.white_time)
-          self.black_time = clock_info.get("black", self.black_time)
+          session["white_time"] = clock_info.get("white", session["white_time"])
+          session["black_time"] = clock_info.get("black", session["black_time"])
         
-        # Handles moves and api
+        # Handles moves and API for this specific game
         move_data = data.get("move_data")
         if move_data:
           move_uci = move_data["move_uci"]
           main_page = self.get_page("MainPage")
           if main_page:
-            main_page.set_game_status(f"Status: Siste trekk {move_uci}")
+            main_page.update_game_status(game_id, f"Status: Siste trekk {move_uci}")
 
           payload = {
-            "board_id": self.current_board_id,
-            "white_player_name": self.white_player,
-            "black_player_name": self.black_player,
+            "board_id": game_id,
+            "white_player_name": pairing["white_name"],
+            "black_player_name": pairing["black_name"],
             "fen": move_data["fen"],
             "pgn": move_data["pgn"],
-            "white_time": self.white_time,
-            "black_time": self.black_time,
+            "white_time": session["white_time"],
+            "black_time": session["black_time"],
             "is_active": True
           }
           self.api_client.sync_game_state(payload)
 
         # Handle live feed UI
         if self.live_window is not None and self.live_window.winfo_exists():
+          # TODO: We will need to update this later so it only draws if THIS game is the one selected!
           self._update_live_video(data["frame"], data["clock_frame"])
       
       except queue.Empty:
         continue
     
     # Loop again in approx 30ms
-    self.after(30, self._poll_vision_queue)
+    self.after(30, self._poll_vision_queues)
 
   def _update_live_video(self, board_frame, clock_frame):
     """Helper to handle image conversion and UI drawing."""
@@ -211,15 +220,45 @@ class MainAdminDashboard(ctk.CTk):
       "status": "planned" # Can be 'planned', 'active', or 'finished'
     }
 
-    # 4. Save to controller state
+    # Save to controller state
     self.tournament_pairings.append(new_pairing)
     print(f"La til nytt oppsett: {new_pairing}")
 
-    # 5. Tell the view to update its UI
+    # Tell the view to update its UI
     pairings_page = self.get_page("PairingsPage")
     if pairings_page:
       pairings_page.clear_inputs()
       pairings_page.render_pairings_list(self.tournament_pairings)
+
+  def start_tracking_game(self, game_id: int):
+    """Spins up a new vision thread for a specific pairing."""
+    pairing = next(
+      (pair for pair in self.tournament_pairings if pair["game_id"] == game_id), None
+    )
+    if not pairing:
+      return
+    
+    # Start camera thread
+    q = queue.Queue()
+    worker = VisionThread(q, camera_source=int(pairing["camera_id"]))
+    worker.start_camera()
+
+    # Store it in state
+    self.active_sessions[game_id] = {
+      "queue": q,
+      "worker": worker,
+      "pairing_data": pairing,
+      "white_time": "",
+      "black_time": ""
+    }
+    pairing["status"] = "active"
+
+    self.get_page("PairingsPage").render_pairings_list(self.tournament_pairings)
+    self.get_page("MainPage").render_active_games(self.active_sessions)
+
+  def lock_board_for_game(self, game_id: int):
+    worker = self.active_sessions[game_id]["worker"]
+    worker.lock_board()
 
 app = MainAdminDashboard()
 app.mainloop()
