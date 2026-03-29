@@ -25,22 +25,37 @@ class PairingsPage(ctk.CTkFrame):
 
     # White player inputs
     ctk.CTkLabel(self.left_panel, text="Hvit spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
-    self.entry_white_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Magnus").pack(fill="x", padx=20, pady=(0, 5))
-    self.entry_white_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Carlsen").pack(fill="x", padx=20, pady=(0, 5))
-    self.entry_white_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 1)").pack(fill="x", padx=20, pady=(0, 15))
+    
+    self.entry_white_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Magnus")
+    self.entry_white_first_name.pack(fill="x", padx=20, pady=(0, 5))
+    
+    self.entry_white_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Carlsen")
+    self.entry_white_last_name.pack(fill="x", padx=20, pady=(0, 5))
+    
+    self.entry_white_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 1)")
+    self.entry_white_id.pack(fill="x", padx=20, pady=(0, 15))
 
     # Black player inputs
-    ctk.CTkLabel(self.left_panel, text="Hvit spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
-    self.entry_black_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Hikaru").pack(fill="x", padx=20, pady=(0, 5))
-    self.entry_black_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Nakamura").pack(fill="x", padx=20, pady=(0, 5))
-    self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)").pack(fill="x", padx=20, pady=(0, 15))
+    ctk.CTkLabel(self.left_panel, text="Svart spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
+    
+    self.entry_black_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Hikaru")
+    self.entry_black_first_name.pack(fill="x", padx=20, pady=(0, 5))
+    
+    self.entry_black_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Nakamura")
+    self.entry_black_last_name.pack(fill="x", padx=20, pady=(0, 5))
+    
+    self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)")
+    self.entry_black_id.pack(fill="x", padx=20, pady=(0, 15))
 
-    # TODO: Camera for the pairing
-    ctk.CTkLabel(self.left_panel, text="Kamera").pack(anchor="w", padx=20)
-    self.entry_camera_id = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. 0").pack(fill="x", padx=20, pady=(0, 20))
+    # Camera for the pairing
+    ctk.CTkLabel(self.left_panel, text="Kamera ID").pack(anchor="w", padx=20)
+    
+    self.entry_camera_id = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. 0")
+    self.entry_camera_id.pack(fill="x", padx=20, pady=(0, 20))
 
     # Submit button
-    self.btn_add = ctk.CTkButton(self.left_panel, text="Legg til par", command=self._on_add_clicked).pack(padx=20, pady=10)
+    self.btn_add = ctk.CTkButton(self.left_panel, text="Legg til par", command=self._on_add_clicked)
+    self.btn_add.pack(padx=20, pady=10)
 
   def _build_right_panel(self):
     self.right_panel = ctk.CTkScrollableFrame(self, label_text="Aktive par")
@@ -50,18 +65,26 @@ class PairingsPage(ctk.CTkFrame):
 
   def _on_add_clicked(self):
     """Gathers data from entries and sends it to the controller."""
+    white_name = f"{self.entry_white_first_name.get().strip()} {self.entry_white_last_name.get().strip()}".strip()
+    black_name = f"{self.entry_black_first_name.get().strip()} {self.entry_black_last_name.get().strip()}".strip()
+
     data = {
-      "white_name": self.entry_white_first_name.get() + " " + self.entry_white_last_name.get(),
-      "white_id": self.entry_white_id.get(),
-      "black_name": self.entry_black_first_name.get() + " " + self.entry_black_last_name.get(),
-      "black_id": self.entry_black_id.get(),
-      "board_id": self.entry_camera_id.get()
+      "white_name": white_name,
+      "white_id": self.entry_white_id.get().strip(),
+      "black_name": black_name,
+      "black_id": self.entry_black_id.get().strip(),
+      "camera_id": self.entry_camera_id.get().strip()
     }
     self.controller.handle_new_pairing(data)
 
   def clear_inputs(self):
     """Clears the text fields after a successful add."""
-    for entry in [self.entry_black_first_name, self.entry_black_id, self.entry_black_last_name, self.entry_camera_id, self.entry_white_first_name, self.entry_white_id, self.entry_white_last_name]:
+    entries = [
+        self.entry_black_first_name, self.entry_black_last_name, self.entry_black_id, 
+        self.entry_white_first_name, self.entry_white_last_name, self.entry_white_id, 
+        self.entry_camera_id
+    ]
+    for entry in entries:
       entry.delete(0, "end")
 
   def render_pairings_list(self, pairings_list):
@@ -73,9 +96,13 @@ class PairingsPage(ctk.CTkFrame):
 
     # Draw new elements based on the data by the controller
     for pairing in pairings_list:
-      card = ctk.CTkFrame(self.right_panel).pack(fill="x", padx=10, pady=5)
+      card = ctk.CTkFrame(self.right_panel)
+      card.pack(fill="x", padx=10, pady=5)
 
-      text = f"Kamera {pairing["board_id"]}: {pairing["white_name"]} vs {pairing["black_name"]}"
-      label = ctk.CTkLabel(card, text=text).pack(side="left", padx=10, pady=10)
+      text = f"Kamera {pairing['camera_id']}: {pairing['white_name']} vs {pairing['black_name']}"
+      
+      label = ctk.CTkLabel(card, text=text)
+      label.pack(side="left", padx=10, pady=10)
 
+      # Add the card to our tracking list so we can delete it later
       self.pairing_widgets.append(card)
