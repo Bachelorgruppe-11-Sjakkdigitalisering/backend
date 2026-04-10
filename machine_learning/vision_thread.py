@@ -29,7 +29,7 @@ class VisionThread(threading.Thread):
     # AI models
     self.board_model = YOLO('brett.pt')
     self.clock_model = YOLO('klokke.pt')
-    self.piece_model = YOLO('brikker100.pt')
+    self.piece_model = YOLO('fargebrikker.onnx', task='detect')
 
     # Board calibration state
     self.history = deque(maxlen=10)
@@ -164,7 +164,7 @@ class VisionThread(threading.Thread):
         self.is_checking_move = False
 
     if self.show_piece_boxes:
-      piece_results = self.piece_model(frame, conf=0.2, verbose=False, iou=0.2)
+      piece_results = self.piece_model(frame, conf=0.05, verbose=False, iou=0.80)
       display_frame = piece_results[0].plot(img=display_frame)
 
     return display_frame
