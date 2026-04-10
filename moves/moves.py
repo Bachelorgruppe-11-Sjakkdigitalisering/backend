@@ -105,10 +105,6 @@ def detect_move(reference_occupied, current_occupied, current_board):
     if not lost and not gained and not changed:
         return None
 
-    move = try_standard_move(lost, gained, changed, current_board)
-    if move:
-        return move
-
     move = try_castling(lost, current_board)
     if move:
         return move
@@ -116,6 +112,11 @@ def detect_move(reference_occupied, current_occupied, current_board):
     move = try_en_passant(lost, current_board)
     if move:
         return move
+    
+    move = try_standard_move(lost, gained, changed, current_board)
+    if move:
+        return move
+
 
     print("Endringer detektert, men ingen samsvarer med lovlige trekk.")
     return None
