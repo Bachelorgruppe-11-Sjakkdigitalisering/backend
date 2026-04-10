@@ -88,6 +88,8 @@ def detect_move (reference_occupied, current_occupied, current_board):
     # rokkade-sjekk
     if len(moved_from) == 2 and len(moved_to_empty) == 2:
         print("Sjekker rokade")
+        print(move_from)
+        print(moved_to_empty)
         move = detect_castling(moved_from, moved_to_empty, current_board)
         if move: 
             print("Fant rokade trekk og returnerer den")
