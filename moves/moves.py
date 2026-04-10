@@ -79,7 +79,6 @@ def detect_move (reference_occupied, current_occupied, current_board):
     moved_from = [r for r in reference_occupied if r not in current_occupied]
     moved_to_empty = [pos for pos in current_occupied if pos not in reference_occupied]
     moved_to_changed = [pos for pos in current_occupied if pos in reference_occupied and current_occupied[pos] != reference_occupied[pos]]
-    moved_to_candidates = moved_to_empty + moved_to_changed
 
 
     start_sq = None
