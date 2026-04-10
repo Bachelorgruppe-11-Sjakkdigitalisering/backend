@@ -149,7 +149,9 @@ class MainAdminDashboard(ctk.CTk):
           payload = {
             "board_id": game_id,
             "white_player_name": pairing["white_name"],
+            "white_player_id": pairing["white_id"],
             "black_player_name": pairing["black_name"],
+            "black_player_id":pairing["black_id"],
             "fen": move_data["fen"],
             "pgn": move_data["pgn"],
             "white_time": session["white_time"],
