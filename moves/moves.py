@@ -148,26 +148,3 @@ def detect_move (reference_occupied, current_occupied, current_board):
             return None
     return None
 
-def execute_move (move, current_board):
-    current_board.push(move)
-    print(f"Trekk utført: {move.uci()}")
-    game = chess.pgn.Game.from_board(current_board)
-    print("Den oppdaterte PGN filen")
-    print(game)
-    print("Aktivt brett:")
-    print(current_board)
-    payload = {
-        "board_id": 1,
-        "white_player_name": "Herman Lundby-Holen",
-        "black_player_name": "Dennis Johansen",
-        "fen": current_board.fen(),
-        "pgn": str(game),
-        "white_time": "10:00",
-        "black_time": "10:00",
-        "is_active": True
-    }
-    try: 
-        post_response = requests.post("http://127.0.0.1:8000/api/update", json=payload)
-        print(f"API Respons: {post_response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Kunne ikke koble til API: {e}")
