@@ -164,7 +164,7 @@ class VisionThread(threading.Thread):
         self.is_checking_move = False
 
     if self.show_piece_boxes:
-      piece_results = self.piece_model(frame, conf=0.05, verbose=False, iou=0.80)
+      piece_results = self.piece_model(frame, conf=0.05, verbose=False, iou=0.70, agnostic=True, imgsz=1024)
       display_frame = piece_results[0].plot(img=display_frame)
 
     return display_frame
