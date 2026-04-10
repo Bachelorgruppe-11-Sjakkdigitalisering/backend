@@ -199,10 +199,32 @@ class MainAdminDashboard(ctk.CTk):
     self.destroy()
 
   def on_stop_tracking_clicked(self, game_id):
-    print("Disabling tracking.")
+    print(f"Disabling tracking for game: {game_id}.")
+    # Find the game to stop tracking for
+    session = self.active_sessions.get(game_id)
+    if not session:
+      return
+    
+    # Stop thread and release camera
+    worker = session["worker"]
+    worker.stop()
+
+    # Update pairing state
+    pairing = session["pairing_data"]
+    pairing["status"] = "finished"
+
+    # Remove game from active sessions
+    del self.active_sessions[game_id]
+
+    # Update main page
     main_page = self.get_page("MainPage")
     if main_page:
-      main_page.set_game_status("Status: Paused.")
+      main_page.render_active_games(self.active_sessions)
+
+    # Update pairings page
+    pairings_page = self.get_page("PairingsPage")
+    if pairings_page:
+      pairings_page.render_pairings_list(self.tournament_pairings)
 
   def handle_new_pairing(self, data: dict):
     """
