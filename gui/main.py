@@ -18,6 +18,7 @@ class MainAdminDashboard(ctk.CTk):
 
     self.api_client = ChessAPIClient()
     self.live_window = None
+    self.live_camera_id = None
 
     # State management
     self.tournament_pairings = [] # List of planned/all games
@@ -108,6 +109,8 @@ class MainAdminDashboard(ctk.CTk):
     """Triggered whenever the 'Vis live feed' button is clicked."""
     print(f"Opening live feed window for Game {game_id}.")
     # TODO: LiveFeedWindow trenger å vite hvilket game den viser
+    self.live_camera_id = game_id
+
     if self.live_window is None or not self.live_window.winfo_exists():
       self.live_window = LiveFeedWindow(self)
       
@@ -157,8 +160,9 @@ class MainAdminDashboard(ctk.CTk):
 
         # Handle live feed UI
         if self.live_window is not None and self.live_window.winfo_exists():
-          # TODO: We will need to update this later so it only draws if THIS game is the one selected!
-          self._update_live_video(data["frame"], data["clock_frame"])
+          # TODO: ENDRE AT MAN IKKE SJEKKER GAME_ID == KAMERA ID!!!
+          if game_id == self.live_camera_id:
+            self._update_live_video(data["frame"], data["clock_frame"])
       
       except queue.Empty:
         continue
