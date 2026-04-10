@@ -192,7 +192,7 @@ class MainAdminDashboard(ctk.CTk):
     self.vision_worker.stop()
     self.destroy()
 
-  def on_stop_tracking_clicked(self):
+  def on_stop_tracking_clicked(self, game_id):
     print("Disabling tracking.")
     main_page = self.get_page("MainPage")
     if main_page:
