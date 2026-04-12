@@ -26,26 +26,26 @@ class PairingsPage(ctk.CTkFrame):
     # White player inputs
     ctk.CTkLabel(self.left_panel, text="Hvit spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
     
+    self.entry_white_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 1)")
+    self.entry_white_id.pack(fill="x", padx=20, pady=(0, 5))
+
     self.entry_white_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Magnus")
     self.entry_white_first_name.pack(fill="x", padx=20, pady=(0, 5))
     
     self.entry_white_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Carlsen")
-    self.entry_white_last_name.pack(fill="x", padx=20, pady=(0, 5))
-    
-    self.entry_white_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 1)")
-    self.entry_white_id.pack(fill="x", padx=20, pady=(0, 15))
+    self.entry_white_last_name.pack(fill="x", padx=20, pady=(0, 15))
 
     # Black player inputs
     ctk.CTkLabel(self.left_panel, text="Svart spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
     
+    self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)")
+    self.entry_black_id.pack(fill="x", padx=20, pady=(0, 5))
+
     self.entry_black_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Hikaru")
     self.entry_black_first_name.pack(fill="x", padx=20, pady=(0, 5))
     
     self.entry_black_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Nakamura")
-    self.entry_black_last_name.pack(fill="x", padx=20, pady=(0, 5))
-    
-    self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)")
-    self.entry_black_id.pack(fill="x", padx=20, pady=(0, 15))
+    self.entry_black_last_name.pack(fill="x", padx=20, pady=(0, 15))    
 
     # Camera for the pairing
     ctk.CTkLabel(self.left_panel, text="Kamera ID").pack(anchor="w", padx=20)
