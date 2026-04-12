@@ -3,8 +3,32 @@ import threading
 
 class ChessAPIClient:
   """Handles communication with the FastAPI backend asynchronously."""
-  def __init__(self, endpoint="http://127.0.0.1:8000/api/update"):
-    self.endpoint = endpoint
+  def __init__(self, base_url="http://127.0.0.1:8000/api"):
+    self.base_url = base_url
+
+  def search_players_sync(self, query:str) -> list:
+    """
+    Fetches players matching the search query.
+    Runs synchronously to immediately return results to the UI thread.
+    """
+    try:
+      response = requests.get(f"{self.base_url}/players", params={"search": query}, timeout=3)
+
+      if response.status_code == 200:
+        return response.json()
+      else:
+        print(f"API Error: Failed to fetch players. Status: {response.status_code}")
+        return []
+      
+    except requests.exceptions.Timeout:
+      print("API Error: Search request timed out.")
+      return []
+    except requests.exceptions.ConnectionError:
+      print("API Error: Connection refused. Is FastAPI running on port 8000?")
+      return []
+    except Exception as e:
+      print(f"API Error during player search: {e}")
+      return []
 
   def sync_game_state(self, payload: dict):
     """
@@ -15,7 +39,7 @@ class ChessAPIClient:
 
   def _post_data(self, payload):
     try:
-      response = requests.post(self.endpoint, json=payload, timeout=5)
+      response = requests.post(f"{self.base_url}/update", json=payload, timeout=5)
 
       if response.status_code == 200:
         print(f"API: Sync successful. Server responded: {response.json()}")
