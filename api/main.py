@@ -170,16 +170,6 @@ async def create_player(player: Player, session: Session = Depends(get_session))
   """
   Creates a new player in the database.
   """
-  # safety check to see if a plyer with this name already exists
-  existing_player = session.exec(select(Player).where(Player.name == player.name)).first()
-
-  if existing_player:
-    raise HTTPException(
-      status_code=400,
-      detail=f"En spiller med navnet '{player.name}' eksisterer allerede i databasen"
-    )
-  
-  # save the new player
   session.add(player)
   session.commit()
   session.refresh(player)
