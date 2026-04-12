@@ -70,8 +70,46 @@ class PairingsPage(ctk.CTkFrame):
     self.selected_white_name = player_data['name']
     print(f"Hvit spiller valgt: {self.selected_white_name}")
 
-  def _on_white_create_new(self, player_data):
-    print(player_data)
+  def _on_white_create_new(self, player_name):
+    """Pops up a confirmation dialog before creating a new player."""
+    # Create popup window
+    dialog = ctk.CTkToplevel(self)
+    dialog.title("Bekreft ny spiller")
+    dialog.geometry("350x150")
+    dialog.attributes("-topmost", True) # Keeps it on top
+    dialog.grab_set() # Blocks interaction with main window until answered
+
+    # Center text
+    ctk.CTkLabel(
+      dialog, 
+      text=f"Er du sikker på at du vil opprette en ny spiller med navnet:\n'{player_name}'?"
+    ).pack(pady=(20, 25))
+
+    def on_confirm():
+      dialog.destroy()
+      # Call API to create new player
+      new_player = self.controller.api_client.create_player_sync(player_name)
+
+      if new_player:
+        self.selected_white_id = new_player['id']
+        self.selected_white_name = new_player['name']
+        print(f"Opprettet og valgte hvit spiller: {self.selected_white_name} (ID: {self.selected_white_id})")
+      else:
+        print("Kunne ikke opprette spilleren")
+
+    def on_cancel():
+      dialog.destroy()
+      # Clear search box
+      self.white_player_search.entry_search.delete(0, "end")
+      self.selected_white_id = None
+      self.selected_white_name = None
+
+    btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+    btn_frame.pack(fill="x", padx=20)
+
+    ctk.CTkButton(btn_frame, text="Avbryt", command=on_cancel).pack(side="left", padx=10, expand=True)
+    ctk.CTkButton(btn_frame, text="Opprett", command=on_confirm).pack(side="right", padx=10, expand=True)
+
 
   def _on_add_clicked(self):
     """Gathers data from entries and sends it to the controller."""
