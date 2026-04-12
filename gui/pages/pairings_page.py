@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from gui.components.player_autocomplete import PlayerAutocomplete 
 
 class PairingsPage(ctk.CTkFrame):
   """
@@ -24,19 +25,19 @@ class PairingsPage(ctk.CTkFrame):
     ctk.CTkLabel(self.left_panel, text="Opprett et nytt par").pack(pady=(20,10))
 
     # White player inputs
-    ctk.CTkLabel(self.left_panel, text="Hvit spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
-    
-    self.entry_white_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 1)")
-    self.entry_white_id.pack(fill="x", padx=20, pady=(0, 5))
-
-    self.entry_white_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Magnus")
-    self.entry_white_first_name.pack(fill="x", padx=20, pady=(0, 5))
-    
-    self.entry_white_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Carlsen")
-    self.entry_white_last_name.pack(fill="x", padx=20, pady=(0, 15))
+    ctk.CTkLabel(self.left_panel, text="Hvit spiller").pack(anchor="w", padx=20)
+    self.white_player_search = PlayerAutocomplete(
+      self.left_panel,
+      api_client=self.controller.api_client,
+      on_player_selected=self._on_white_selected,
+      on_create_new=self._on_white_create_new
+    )
+    self.white_player_search.pack(fill="x", padx=20, pady=(0, 15))
+    self.selected_white_id = None
+    self.selected_white_name = None
 
     # Black player inputs
-    ctk.CTkLabel(self.left_panel, text="Svart spiller (Fornavn / Etternavn / ID)").pack(anchor="w", padx=20)
+    ctk.CTkLabel(self.left_panel, text="Svart spiller").pack(anchor="w", padx=20)
     
     self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)")
     self.entry_black_id.pack(fill="x", padx=20, pady=(0, 5))
@@ -62,6 +63,15 @@ class PairingsPage(ctk.CTkFrame):
     self.right_panel.grid(row=0, column=1, sticky="nsew")
     
     self.pairing_widgets = []
+
+  def _on_white_selected(self, player_data):
+    """Callback fired when the user clicks a dropdown result."""
+    self.selected_white_id = player_data['id']
+    self.selected_white_name = player_data['name']
+    print(f"Hvit spiller valgt: {self.selected_white_name}")
+
+  def _on_white_create_new(self, player_data):
+    print(player_data)
 
   def _on_add_clicked(self):
     """Gathers data from entries and sends it to the controller."""
