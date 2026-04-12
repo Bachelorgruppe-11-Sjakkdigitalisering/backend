@@ -29,6 +29,24 @@ class ChessAPIClient:
     except Exception as e:
       print(f"API Error during player search: {e}")
       return []
+    
+  def create_player_sync(self, name: str) -> dict:
+    """
+    Creates a new player in the database synchronously.
+    Returns the created player dictionary or None on failure.
+    """
+    payload = {"name": name}
+
+    try:
+      response = requests.post(f"{self.base_url}/players", json=payload, timeout=3)
+      if response.status_code == 200:
+        return response.json()
+      else:
+        print(f"API Error: Could not create player. Status: {response.status_code}")
+        return None
+    except Exception as e:
+      print(f"API Error during player creation: {e}")
+      return None
 
   def sync_game_state(self, payload: dict):
     """
