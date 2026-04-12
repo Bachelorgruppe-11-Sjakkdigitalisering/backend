@@ -39,15 +39,6 @@ class PairingsPage(ctk.CTkFrame):
       on_create_new=lambda name: self._on_player_create_new("white", name)
     )
     self.selected_players["white"]["widget"].pack(fill="x", padx=20, pady=(0, 15))
-    # self.white_player_search = PlayerAutocomplete(
-    #   self.left_panel,
-    #   api_client=self.controller.api_client,
-    #   on_player_selected=self._on_white_selected,
-    #   on_create_new=self._on_white_create_new
-    # )
-    # self.white_player_search.pack(fill="x", padx=20, pady=(0, 15))
-    # self.selected_white_id = None
-    # self.selected_white_name = None
 
     # Black player inputs
     ctk.CTkLabel(self.left_panel, text="Svart spiller").pack(anchor="w", padx=20)
@@ -57,16 +48,7 @@ class PairingsPage(ctk.CTkFrame):
       on_player_selected=lambda player: self._on_player_selected("black", player),
       on_create_new=lambda name: self._on_player_create_new("black", name)
     )
-    self.selected_players["black"]["widget"].pack(fill="x", padx=20, pady=(0, 15))
-    
-    # self.entry_black_id = ctk.CTkEntry(self.left_panel, placeholder_text="Spiller ID (f.eks. 2)")
-    # self.entry_black_id.pack(fill="x", padx=20, pady=(0, 5))
-
-    # self.entry_black_first_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Hikaru")
-    # self.entry_black_first_name.pack(fill="x", padx=20, pady=(0, 5))
-    
-    # self.entry_black_last_name = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. Nakamura")
-    # self.entry_black_last_name.pack(fill="x", padx=20, pady=(0, 15))    
+    self.selected_players["black"]["widget"].pack(fill="x", padx=20, pady=(0, 15))  
 
     # Camera for the pairing
     ctk.CTkLabel(self.left_panel, text="Kamera ID").pack(anchor="w", padx=20)
@@ -132,27 +114,35 @@ class PairingsPage(ctk.CTkFrame):
 
   def _on_add_clicked(self):
     """Gathers data from entries and sends it to the controller."""
-    white_name = f"{self.entry_white_first_name.get().strip()} {self.entry_white_last_name.get().strip()}".strip()
-    black_name = f"{self.entry_black_first_name.get().strip()} {self.entry_black_last_name.get().strip()}".strip()
+    white = self.selected_players["white"]
+    black = self.selected_players["black"]
+
+    if not white["id"] or not black["id"]:
+      print("Advarsel: Du må velge både hvit og svart spiller!")
+      return
 
     data = {
-      "white_name": white_name,
-      "white_id": self.entry_white_id.get().strip(),
-      "black_name": black_name,
-      "black_id": self.entry_black_id.get().strip(),
+      "white_name": white["name"],
+      "white_id": white["id"],
+      "black_name": black["name"],
+      "black_id": black["id"],
       "camera_id": self.entry_camera_id.get().strip()
     }
     self.controller.handle_new_pairing(data)
 
   def clear_inputs(self):
-    """Clears the text fields after a successful add."""
-    entries = [
-        self.entry_black_first_name, self.entry_black_last_name, self.entry_black_id, 
-        self.entry_white_first_name, self.entry_white_last_name, self.entry_white_id, 
-        self.entry_camera_id
-    ]
-    for entry in entries:
-      entry.delete(0, "end")
+    """Clears the text fields and resets state after a successful add."""
+    # Clear the custom autocomplete text boxes
+    self.selected_players["white"]["widget"].entry_search.delete(0, "end")
+    self.selected_players["black"]["widget"].entry_search.delete(0, "end")
+    
+    # Clear camera
+    self.entry_camera_id.delete(0, "end")
+    
+    # Reset internal state
+    for color in ["white", "black"]:
+      self.selected_players[color]["id"] = None
+      self.selected_players[color]["name"] = None
 
   def render_pairings_list(self, pairings_list):
     """Re-draws the list of pairings on the right side."""
