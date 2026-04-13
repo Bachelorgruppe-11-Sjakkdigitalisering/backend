@@ -17,18 +17,16 @@ class PairingsPage(ctk.CTkFrame):
     }
 
     # Configure 2-column layout
-    self.grid_columnconfigure(0, weight=1, uniform="layout")
-    self.grid_columnconfigure(1, weight=2, uniform="layout")
+    self.grid_columnconfigure(0, weight=9, uniform="layout")
+    self.grid_columnconfigure(1, weight=11, uniform="layout")
     self.grid_rowconfigure(0, weight=1)
 
     self._build_left_panel()
     self._build_right_panel()
 
   def _build_left_panel(self):
-    self.left_panel = ctk.CTkFrame(self)
+    self.left_panel = ctk.CTkScrollableFrame(self, label_text="Opprett et nytt par")
     self.left_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-
-    ctk.CTkLabel(self.left_panel, text="Opprett et nytt par").pack(pady=(20,10))
 
     # White player inputs
     ctk.CTkLabel(self.left_panel, text="Hvit spiller").pack(anchor="w", padx=20)
