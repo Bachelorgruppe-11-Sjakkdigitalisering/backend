@@ -51,7 +51,7 @@ class PlayerAutocomplete(ctk.CTkFrame):
           self.dropdown_frame,
           text=btn_text,
           anchor="w",
-          # fg_color="transparent"
+          # fg_color="transparent",
           command=lambda p=player: self._select_player(p)
         )
         btn.pack(fill="x", pady=2)

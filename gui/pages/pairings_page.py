@@ -17,8 +17,8 @@ class PairingsPage(ctk.CTkFrame):
     }
 
     # Configure 2-column layout
-    self.grid_columnconfigure(0, weight=1)
-    self.grid_columnconfigure(1, weight=2)
+    self.grid_columnconfigure(0, weight=1, uniform="layout")
+    self.grid_columnconfigure(1, weight=2, uniform="layout")
     self.grid_rowconfigure(0, weight=1)
 
     self._build_left_panel()
