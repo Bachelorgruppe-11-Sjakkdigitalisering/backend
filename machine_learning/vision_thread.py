@@ -36,6 +36,9 @@ class VisionThread(threading.Thread):
     self.M = None
     self.M_inv = None
     self.show_boxes = True
+    self.is_auto_calibrating = True
+    self.calibration_start_time = time.time()
+    self.latest_status_message = None
 
     # Gameplay and logic state
     self.current_board = chess.Board()
@@ -66,6 +69,14 @@ class VisionThread(threading.Thread):
     self.is_running.clear()
     if self.cap:
       self.cap.release()
+
+  def trigger_auto_calibration(self):
+    """Drops the current perspective and starts and automatic recalibration."""
+    print("Vision: Starting auto-calibration...")
+    self.unlock_board()
+    self.is_auto_calibrating = True
+    self.calibration_start_time = time.time()
+    self.latest_status_message = "Status: Rekalibrerer brett..."
 
   def lock_board(self):
     """Locks the perspective on the board based on recent frames."""
@@ -116,7 +127,7 @@ class VisionThread(threading.Thread):
       self._send_to_gui(frame, board_display, clock_display)
 
   def _process_board_calibration(self, frame):
-    """Finds board corners before perspective is locked."""
+    """Finds board corners. Auto-locks if it finds enough, or times out."""
     display_frame = frame.copy()
     results = self.board_model(frame, conf=0.05, verbose=False, iou=0.1)
 
@@ -126,6 +137,17 @@ class VisionThread(threading.Thread):
     corners = chessboard.extract_corners(results)
     if corners is not None:
       self.history.append(corners)
+
+    if self.is_auto_calibrating:
+      if len(self.history) >= 10:
+        self.lock_board()
+        self.is_auto_calibrating = False
+        self.latest_status_message = "Status: Brett låst og klart!"
+
+      elif time.time() - self.calibration_start_time > 5.0:
+        self.is_auto_calibrating = False
+        self.latest_status_message = "Status: FEIL! Finner ikke brett. Sjekk kamera"
+        print("Vision: Auto-calibration timed out.")
 
     return display_frame
   
@@ -210,8 +232,12 @@ class VisionThread(threading.Thread):
       "clock_frame": clock_display,
       "raw_frame": raw_frame.copy(),
       "move_data": self.latest_move,
-      "clock_info": self.latest_clock_info
+      "clock_info": self.latest_clock_info,
+      "status_message": self.latest_status_message
     })
 
     if self.latest_move:
       self.latest_move = None
+
+    if self.latest_status_message:
+      self.latest_status_message = None

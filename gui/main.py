@@ -101,7 +101,6 @@ class MainAdminDashboard(ctk.CTk):
   def on_live_feed_clicked(self, game_id: int):
     """Triggered whenever the 'Vis live feed' button is clicked."""
     print(f"Opening live feed window for Game {game_id}.")
-    # TODO: LiveFeedWindow trenger å vite hvilket game den viser
     self.live_camera_id = game_id
 
     if self.live_window is None or not self.live_window.winfo_exists():
@@ -258,6 +257,10 @@ class MainAdminDashboard(ctk.CTk):
   def lock_board_for_game(self, game_id: int):
     worker = self.active_sessions[game_id]["worker"]
     worker.lock_board()
+
+  def auto_calibrate_game(self, game_id: int):
+    worker = self.active_sessions[game_id]["worker"]
+    worker.trigger_auto_calibration()
 
 app = MainAdminDashboard()
 app.mainloop()
