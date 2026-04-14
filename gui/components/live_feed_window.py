@@ -41,28 +41,39 @@ class LiveFeedWindow(ctk.CTkToplevel):
     self.control_frame = ctk.CTkFrame(self)
     self.control_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(5, 10))
 
-    self.control_frame.grid_columnconfigure((0, 1, 2), weight=1)
+    self.control_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
+    # Manual unlock button
+    self.btn_unlock = ctk.CTkButton(
+      self.control_frame,
+      text="Lås opp brett",
+      command=lambda: self.controller.unlock_board_for_game(self.game_id)
+    )
+    self.btn_unlock.grid(row=0, column=0, padx=5, sticky="ew")
+
+    # Manual lock button
     self.btn_lock = ctk.CTkButton(
       self.control_frame, 
       text="Lås brett", 
       command=lambda: self.controller.lock_board_for_game(self.game_id)
     )
-    self.btn_lock.grid(row=0, column=0, padx=5, sticky="ew")
+    self.btn_lock.grid(row=0, column=1, padx=5, sticky="ew")
 
+    # Clock ROI button
     self.btn_roi = ctk.CTkButton(
       self.control_frame, 
       text="Velg klokkeområde", 
       command=lambda: self.controller.open_roi_selector(self.game_id)
     )
-    self.btn_roi.grid(row=0, column=1, padx=5, sticky="ew")
+    self.btn_roi.grid(row=0, column=2, padx=5, sticky="ew")
 
+    # Toggle pieces button
     self.btn_toggle = ctk.CTkButton(
       self.control_frame, 
       text="Skjul brikker", 
       command=self._on_toggle_clicked
     )
-    self.btn_toggle.grid(row=0, column=2, padx=5, sticky="ew")
+    self.btn_toggle.grid(row=0, column=3, padx=5, sticky="ew")
 
   def _on_toggle_clicked(self):
     """Toggles the button text and tells the controller to toggle the boxes."""

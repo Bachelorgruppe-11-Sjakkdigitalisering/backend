@@ -263,6 +263,10 @@ class MainAdminDashboard(ctk.CTk):
     worker = self.active_sessions[game_id]["worker"]
     worker.lock_board()
 
+  def unlock_board_for_game(self, game_id: int):
+    worker = self.active_sessions[game_id]["worker"]
+    worker.unlock_board()
+
   def auto_calibrate_game(self, game_id: int):
     worker = self.active_sessions[game_id]["worker"]
     worker.trigger_auto_calibration()
