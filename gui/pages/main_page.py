@@ -42,30 +42,11 @@ class MainPage(ctk.CTkFrame):
       card.connect_live_feed_callback(lambda gid=game_id: self.controller.on_live_feed_clicked(gid))
       card.connect_stop_tracking_callback(lambda gid=game_id: self.controller.on_stop_tracking_clicked(gid))
 
-      # Control buttons
-      # TODO: Move these to live feed window
-      control_frame = ctk.CTkFrame(game_wrapper, fg_color="transparent")
-      control_frame.pack(fill="x", padx=10, pady=(0, 10))
-
-      btn_lock = ctk.CTkButton(control_frame, text="Lås brett", command=lambda gid=game_id: self.controller.lock_board_for_game(gid))
-      btn_lock.pack(side="left", padx=5)
-
-      btn_roi = ctk.CTkButton(control_frame, text="Velg klokkeområde", command=lambda gid=game_id: self.controller.open_roi_selector(gid))
-      btn_roi.pack(side="left", padx=5)
-
-      btn_toggle = ctk.CTkButton(control_frame, text="Skjul brikker", command=lambda gid=game_id: self.controller.toggle_piece_boxes(gid))
-      btn_toggle.pack(side="left", padx=5)
-
       # Save references so we can update text later without re-rendering everything
       self.game_widgets[game_id] = {
         "card": card,
-        "btn_toggle": btn_toggle
       }
 
   def update_game_status(self, game_id: int, text: str):
     if game_id in self.game_widgets:
       self.game_widgets[game_id]["card"].update_status(text)
-
-  def update_toggle_button_text(self, game_id: int, text: str):
-    if game_id in self.game_widgets:
-      self.game_widgets[game_id]["btn_toggle"].configure(text=text)

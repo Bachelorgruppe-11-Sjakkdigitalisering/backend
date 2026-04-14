@@ -80,14 +80,7 @@ class MainAdminDashboard(ctk.CTk):
   def toggle_piece_boxes(self, game_id: int):
     """Toggles the visibility of the YOLO piece bounding boxes."""
     worker = self.active_sessions[game_id]["worker"]
-    main_page = self.get_page("MainPage")
-    
-    if worker.show_piece_boxes:
-      worker.show_piece_boxes = False
-      main_page.update_toggle_button_text(game_id, "Vis brikker")
-    else:
-      worker.show_piece_boxes = True
-      main_page.update_toggle_button_text(game_id, "Skjul brikker")
+    worker.show_piece_boxes = not worker.show_piece_boxes
 
   def open_roi_selector(self, game_id: int):
     """Grabs one frame from the queue and opens the drawing tool."""
@@ -112,7 +105,7 @@ class MainAdminDashboard(ctk.CTk):
     self.live_camera_id = game_id
 
     if self.live_window is None or not self.live_window.winfo_exists():
-      self.live_window = LiveFeedWindow(self)
+      self.live_window = LiveFeedWindow(self, controller=self, game_id=game_id)
       
       main_page = self.get_page("MainPage")
       if main_page:
