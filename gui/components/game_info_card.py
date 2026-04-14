@@ -29,6 +29,13 @@ class GameInfoCard(ctk.CTkFrame):
     self.btn_live_feed = ctk.CTkButton(self.button_frame, text="Vis live feed")
     self.btn_live_feed.pack(side="left")
 
+    # Rekalibrer button
+    self.btn_recalibrate = ctk.CTkButton(
+      self.button_frame, 
+      text="Rekalibrer brett", 
+    )
+    self.btn_recalibrate.pack(side="left", padx=5)
+
     # Stopp tracking button
     self.btn_stop_tracking = ctk.CTkButton(self.button_frame, text="Stopp tracking")
     self.btn_stop_tracking.pack(side="left")
@@ -40,6 +47,9 @@ class GameInfoCard(ctk.CTkFrame):
   def connect_live_feed_callback(self, callback):
     """Connect live feed view button to open actual live feed."""
     self.btn_live_feed.configure(command=callback)
+
+  def connect_recalibrate_callback(self, callback):
+    self.btn_recalibrate.configure(command=callback)
 
   def connect_stop_tracking_callback(self, callback):
     """Connect stop tracking button to a function in the dashboard."""

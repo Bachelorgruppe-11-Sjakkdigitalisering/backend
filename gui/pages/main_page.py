@@ -41,16 +41,7 @@ class MainPage(ctk.CTkFrame):
       # Connect callbacks, passing the game_id back to the controller
       card.connect_live_feed_callback(lambda gid=game_id: self.controller.on_live_feed_clicked(gid))
       card.connect_stop_tracking_callback(lambda gid=game_id: self.controller.on_stop_tracking_clicked(gid))
-
-      control_frame = ctk.CTkFrame(game_wrapper, fg_color="transparent")
-      control_frame.pack(fill="x", padx=10, pady=(0, 10))
-
-      btn_recalibrate = ctk.CTkButton(
-        control_frame, 
-        text="Rekalibrer brett",
-        command=lambda gid=game_id: self.controller.auto_calibrate_game(gid)
-      )
-      btn_recalibrate.pack(side="left")
+      card.connect_recalibrate_callback(lambda gid=game_id: self.controller.auto_calibrate_game(gid))
 
       # Save references so we can update text later without re-rendering everything
       self.game_widgets[game_id] = {
