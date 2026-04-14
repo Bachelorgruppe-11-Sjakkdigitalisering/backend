@@ -123,6 +123,11 @@ class MainAdminDashboard(ctk.CTk):
 
       try:
         data = q.get_nowait()
+        main_page = self.get_page("MainPage")
+
+        status_msg = data.get("status_message")
+        if status_msg and main_page:
+          main_page.update_game_status(game_id, status_msg)
 
         # Update Clock State for this specific game
         clock_info = data.get("clock_info")
