@@ -56,3 +56,9 @@ class MotionDetector:
         return "SETTLED"
       
     return "IDLE"
+
+  def reset(self):
+    """Clears history."""
+    self.previous_frame = None
+    self.is_moving = False
+    self.still_counter = 0
