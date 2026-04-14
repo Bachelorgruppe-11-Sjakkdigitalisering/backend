@@ -73,8 +73,19 @@ class VisionThread(threading.Thread):
     if self.M is not None:
       print("Vision: Board perspective locked successfully!")
       self.show_boxes = False
+
+      self.motion_detector.reset()
+      self.board_is_setup = False
     else:
       print("Vision: Not enough data to lock board yet.")
+
+  def unlock_board(self):
+    """Drops the current perspective lock so the board can be recalibrated."""
+    print("Vision: Board unlocked. Recalibrating...")
+    self.show_boxes = True
+    self.M = None
+    self.M_inv = None
+    self.history.clear()
 
   def set_clock_roi(self, roi):
     """Updates the ROI for the clock cutout. roi is a tuple like this: (x, y, w, h)"""
