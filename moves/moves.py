@@ -55,122 +55,68 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
                 
     return occupied
 
-def detect_castling(moved_from, moved_to, current_board):
-    for move in current_board.legal_moves:
-        if current_board.is_castling(move):
-            return move
-    return None
+def get_board_diff(reference_occupied, current_occupied):
+    """Returnerer lister over felter som er mistet, vunnet eller endret."""
+    lost = [pos for pos in reference_occupied if pos not in current_occupied]
+    gained = [pos for pos in current_occupied if pos not in reference_occupied]
+    changed = [pos for pos in current_occupied if pos in reference_occupied 
+               and current_occupied[pos] != reference_occupied[pos]]
+    return lost, gained, changed
 
-def detect_en_passant(moved_from, moved_to, current_board):
-    for move in current_board.legal_moves:
-        if current_board.is_en_passant(move):
-            return move
-    return None
-
-def check_promotion(move_string, current_board):
- 
-    promo_move_q = chess.Move.from_uci(move_string + "q")
-    if promo_move_q in current_board.legal_moves:
-        # Standardiserer til å alltid promotere til Dronning inntil videre.
-        return promo_move_q
-    return None
-
-def detect_move (reference_occupied, current_occupied, current_board):
-    moved_from = [r for r in reference_occupied if r not in current_occupied]
-    moved_to_empty = [pos for pos in current_occupied if pos not in reference_occupied]
-    moved_to_changed = [pos for pos in current_occupied if pos in reference_occupied and current_occupied[pos] != reference_occupied[pos]]
-    moved_to_candidates = moved_to_empty + moved_to_changed
-
-
-    start_sq = None
-    end_sq = None
-    move = None
-
-    # rokkade-sjekk
-    if len(moved_from) == 2 and len(moved_to_empty) == 2:
-        print("Sjekker rokade")
-        print(moved_from)
-        print(moved_to_empty)
-        move = detect_castling(moved_from, moved_to_empty, current_board)
-        if move: 
-            print("Fant rokade trekk og returnerer den")
-            return move
-
-    # en passant-sjekk
-    elif len(moved_from) == 2 and len(moved_to_empty) == 1:
-        print("Sjekker en passant")
-        move = detect_en_passant(moved_from, moved_to_empty, current_board)
-        if move: return move
-
-    # vanlig trekk-sjekk altså flytte brikke til ledig felt
-    if len(moved_from) == 1 and len(moved_to_empty) == 1:
-        print("Sjekker vanlig trekk")
-        f_row, f_col = moved_from[0]
-        t_row, t_col = moved_to_empty[0]
-        start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
-        end_sq = f"{FILES[t_col]}{RANKS[t_row]}"
-
-    # vanlig capture-sjekk 
-    elif len(moved_from) == 1 and len(moved_to_empty) == 0:
-        print("Sjekker capture")
-        f_row, f_col = moved_from[0]
-        start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
-        
-        # YOLO la merke til at brikken på destinasjonen byttet klasse
-        if len(moved_to_changed) == 1:
-            print("Scenario A")
-            t_row, t_col = moved_to_changed[0]
+def try_standard_move(lost, gained, changed, current_board):
+    from_candidates = lost
+    to_candidates = gained + changed
+    
+    for f_row, f_col in from_candidates:
+        for t_row, t_col in to_candidates:
+            start_sq = f"{FILES[f_col]}{RANKS[f_row]}"
             end_sq = f"{FILES[t_col]}{RANKS[t_row]}"
             
-        # YOLO merket ikke at brikken byttet klasse (Fallback gjetting via python-chess)
-        elif len(moved_to_changed) == 0:
-            print("YOLO så ikke hvem som ble slått. Gjetter basert på lovlige trekk...")
-            possible_captures = [m for m in current_board.legal_moves if m.uci().startswith(start_sq) and current_board.is_capture(m)]
+            move = chess.Move.from_uci(start_sq + end_sq)
+            if move in current_board.legal_moves:
+                return move
             
-            if len(possible_captures) == 1:
-                return possible_captures[0]
-            else:
-                print("Klarte ikke å avgjøre capture automatisk (flere eller null mulige captures)")
-                return None
-        else:
-            print(f"Feil: YOLO rapporterte at {len(moved_to_changed)} brikker byttet klasse samtidig. For mye støy.")
-            return None
-    if start_sq and end_sq:
-        move_string = start_sq + end_sq
-        #promoterings-sjekk
-        print("Sjekker promotering")
-        promoted_move = check_promotion(move_string, current_board)
-        if promoted_move:
-            return promoted_move
-        
-        move = chess.Move.from_uci(move_string)
-        if move in current_board.legal_moves:
-            return move
-        else:
-            print(f"Ulovlig trekk forsøkt: {move_string}")
-            return None
+            promo_move = chess.Move.from_uci(start_sq + end_sq + "q")
+            if promo_move in current_board.legal_moves:
+                return promo_move
     return None
 
-def execute_move (move, current_board):
-    current_board.push(move)
-    print(f"Trekk utført: {move.uci()}")
-    game = chess.pgn.Game.from_board(current_board)
-    print("Den oppdaterte PGN filen")
-    print(game)
-    print("Aktivt brett:")
-    print(current_board)
-    payload = {
-        "board_id": 1,
-        "white_player_name": "Herman Lundby-Holen",
-        "black_player_name": "Dennis Johansen",
-        "fen": current_board.fen(),
-        "pgn": str(game),
-        "white_time": "10:00",
-        "black_time": "10:00",
-        "is_active": True
-    }
-    try: 
-        post_response = requests.post("http://127.0.0.1:8000/api/update", json=payload)
-        print(f"API Respons: {post_response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Kunne ikke koble til API: {e}")
+def try_castling(lost, current_board):
+    for move in current_board.legal_moves:
+        if current_board.is_castling(move):
+            f_sq = chess.square_name(move.from_square)
+           
+            if any(f"{FILES[c]}{RANKS[r]}" == f_sq for r, c in lost):
+                return move
+    return None
+
+def try_en_passant(lost, current_board):
+    for move in current_board.legal_moves:
+        if current_board.is_en_passant(move):
+            f_sq = chess.square_name(move.from_square)
+            if any(f"{FILES[c]}{RANKS[r]}" == f_sq for r, c in lost):
+                return move
+    return None
+
+def detect_move(reference_occupied, current_occupied, current_board):
+
+    lost, gained, changed = get_board_diff(reference_occupied, current_occupied)
+    
+    if not lost and not gained and not changed:
+        return None
+
+    move = try_castling(lost, current_board)
+    if move:
+        return move
+      
+    move = try_en_passant(lost, current_board)
+    if move:
+        return move
+    
+    move = try_standard_move(lost, gained, changed, current_board)
+    if move:
+        return move
+
+
+    print("Endringer detektert, men ingen samsvarer med lovlige trekk.")
+    return None
