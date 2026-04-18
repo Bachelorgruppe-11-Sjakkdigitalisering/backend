@@ -251,8 +251,11 @@ class MainAdminDashboard(ctk.CTk):
     # Teardown logic
     print(f"Avslutter sporing for parti: {game_id}.")
 
-    # Stop thread and release camera
+    # Stop thread
     worker.stop()
+
+    # Remove from website live feed
+    self.api_client.remove_live_game_sync(game_id)
 
     # Update pairing state
     pairing["status"] = "finished"
