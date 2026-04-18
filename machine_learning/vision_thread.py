@@ -65,10 +65,8 @@ class VisionThread(threading.Thread):
     self.start() # Starts the run() method in the background
 
   def stop(self):
-    """Safely shuts down the thread and camera."""
+    """Signals the background thread to safely shut down."""
     self.is_running.clear()
-    if self.cap:
-      self.cap.release()
 
   def trigger_auto_calibration(self):
     """Drops the current perspective and starts and automatic recalibration."""
@@ -125,6 +123,10 @@ class VisionThread(threading.Thread):
 
       # Send to GUI
       self._send_to_gui(frame, board_display, clock_display)
+
+    print("VisionThread: Thread stopped. Releasing camera...")
+    if self.cap and self.cap.isOpened():
+      self.cap.release()
 
   def _process_board_calibration(self, frame):
     """Finds board corners. Auto-locks if it finds enough, or times out."""
