@@ -8,7 +8,7 @@ class StopTrackingWindow(ctk.CTkToplevel):
     self.game_id = game_id
 
     self.title(f"Avslutt parti {game_id}")
-    self.geometry("400x400")
+    self.geometry("600x400")
     self.attributes("-topmost", True)
     self.grab_set() # Blocks interaction with main window
 
@@ -29,23 +29,28 @@ class StopTrackingWindow(ctk.CTkToplevel):
     btn_frame = ctk.CTkFrame(self)
     btn_frame.pack(fill="x", padx=20)
 
+    btn_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="button_group")
+
     # Cancel
-    ctk.CTkButton(
+    btn_cancel = ctk.CTkButton(
       btn_frame, text="Avbryt", fg_color="gray",
       command=lambda: self._close("cancel")
-    ).pack(side="left", padx=5)
+    )
+    btn_cancel.grid(row=0, column=0, sticky="ew", padx=(0, 5))
 
     # Stop but don't save
-    ctk.CTkButton(
+    btn_discard = ctk.CTkButton(
       btn_frame, text="Stopp (Ikke lagre)", fg_color="#c93434", hover_color="#9e2a2a",
       command=lambda: self._close("discard")
-    ).pack(side="left", padx=5)
+    )
+    btn_discard.grid(row=0, column=1, sticky="ew", padx=5)
 
     # Save to DB
-    ctk.CTkButton(
+    btn_save = ctk.CTkButton(
       btn_frame, text="Lagre i database", fg_color="#28a745", hover_color="#218838",
       command=lambda: self._close("save")
-    ).pack(side="right", padx=5)
+    )
+    btn_save.grid(row=0, column=2, sticky="ew", padx=(5, 0))
 
   def _close(self, action: str):
     """Destroys the window and passes the decision back to the controller."""
