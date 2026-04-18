@@ -21,8 +21,8 @@ class StopTrackingWindow(ctk.CTkToplevel):
     # Result selection
     ctk.CTkLabel(self, text="Velg resultat:").pack()
 
-    self.result_var = ctk.StringVar(value="1-0")
-    self.seg_button = ctk.CTkSegmentedButton(self, values=["1-0", "1/2-1/2", "0-1"], variable=self.result_var)
+    self.result_var = ctk.StringVar(value="Hvit seier")
+    self.seg_button = ctk.CTkSegmentedButton(self, values=["Hvit seier", "Remis", "Svart seier"], variable=self.result_var)
     self.seg_button.pack(pady=(5, 20))
 
     # Buttons
@@ -54,6 +54,16 @@ class StopTrackingWindow(ctk.CTkToplevel):
 
   def _close(self, action: str):
     """Destroys the window and passes the decision back to the controller."""
-    result = self.result_var.get() if action == "save" else None
+    result = None
+    match self.result_var.get():
+      case "Hvit seier":
+        result = "1-0"
+      case "Remis":
+        result = "1/2-1/2"
+      case "Svart seier":
+        result = "0-1"
+      case _:
+        result = None
+    # result = self.result_var.get() if action == "save" else None
     self.destroy()
     self.callback(self.game_id, action, result)
