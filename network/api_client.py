@@ -87,3 +87,16 @@ class ChessAPIClient:
     except Exception as e:
       print(f"API Error under lagring av parti: {e}")
       return False
+
+  def remove_live_game_sync(self, board_id: int):
+    """
+    Tells the backend to remove this game from the active live feed.
+    """
+    try:
+      response = requests.delete(f"{self.base_url}/game/{board_id}")
+      if response.status_code == 200:
+        print(f"API: Parti {board_id} fjernet fra live-feeden på nettsiden.")
+      else:
+        print(f"API Advarsel: Fikk status {response.status_code} ved fjerning av live-parti.")
+    except Exception as e:
+      print(f"API Error: Kunne ikke kontakte server for å fjerne live-parti: {e}")
