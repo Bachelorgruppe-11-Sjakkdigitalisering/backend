@@ -1,9 +1,6 @@
 # Backend og Maskinsyn for Digitalisering av Sjakkparti
 
-## Innhold
-
 - [Backend og Maskinsyn for Digitalisering av Sjakkparti](#backend-og-maskinsyn-for-digitalisering-av-sjakkparti)
-  - [Innhold](#innhold)
   - [Oversikt](#oversikt)
   - [Nøkkelfunksjoner](#nøkkelfunksjoner)
   - [Teknologistack](#teknologistack)
