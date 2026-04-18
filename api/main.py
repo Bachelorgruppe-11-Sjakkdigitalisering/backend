@@ -54,6 +54,15 @@ async def get_game_state(board_id: int):
   # return game if found
   return active_games[board_id]
 
+@app.delete("api/game/{board_id}")
+async def remove_live_game(board_id: int):
+  """Removes a game from the live games list."""
+  if board_id in active_games:
+    del active_games[board_id]
+    return {"status": "removed", "board_id": board_id}
+  # If already gone, just ignore
+  return {"status": "not_found", "message": "Game already removed"}
+
 # endpoint to list all active games
 @app.get("/api/games")
 async def list_games():
