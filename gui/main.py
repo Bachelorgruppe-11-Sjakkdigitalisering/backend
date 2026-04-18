@@ -1,10 +1,12 @@
 import customtkinter as ctk
 import cv2
 import queue
+import chess.pgn
 from PIL import Image
 from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
+from gui.components.stop_tracking_window import StopTrackingWindow
 from gui.pages.main_page import MainPage
 from gui.pages.pairings_page import PairingsPage
 from machine_learning.vision_thread import VisionThread
@@ -196,18 +198,63 @@ class MainAdminDashboard(ctk.CTk):
     self.destroy()
 
   def on_stop_tracking_clicked(self, game_id):
-    print(f"Disabling tracking for game: {game_id}.")
+    """Triggered when user clicks 'Stopp tracking' on the UI. Opens the stop tracking popup."""
     # Find the game to stop tracking for
     session = self.active_sessions.get(game_id)
     if not session:
       return
     
-    # Stop thread and release camera
+    pairing = session["pairing_data"]
+
+    # Open popup
+    StopTrackingWindow(
+      self,
+      game_id,
+      pairing["white_name"],
+      pairing["black_name"],
+      self._handle_stop_decision
+    )
+
+  def _handle_stop_decision(self, game_id: int, action: str, result: str):
+    """Processes the choice made in stop tracking window."""
+    if action == "cancel":
+      print(f"Sporing av parti {game_id} fortsetter.")
+      return
+    
+    session = self.active_sessions.get(game_id)
+    if not session:
+      return
+    
     worker = session["worker"]
+    pairing = session["pairing_data"]
+
+    # If the user wants to save, we send the data to the database
+    if action == "save":
+      # Extract the final game state from the thread's internal chess board
+      game = chess.pgn.Game.from_board(worker.current_board)
+      game.headers["Result"] = result
+      game.headers["White"] = pairing["white_name"]
+      game.headers["Black"] = pairing["black_name"]
+      
+      payload = {
+        "white_player_name": pairing["white_name"],
+        "white_player_id": pairing["white_id"],
+        "black_player_name": pairing["black_name"],
+        "black_player_id": pairing["black_id"],
+        "pgn": str(game),
+        "result": result
+      }
+      
+      # Send to database
+      self.api_client.archive_game_sync(payload)
+
+    # Teardown logic
+    print(f"Avslutter sporing for parti: {game_id}.")
+
+    # Stop thread and release camera
     worker.stop()
 
     # Update pairing state
-    pairing = session["pairing_data"]
     pairing["status"] = "finished"
 
     # Remove game from active sessions
