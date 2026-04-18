@@ -64,6 +64,6 @@ class StopTrackingWindow(ctk.CTkToplevel):
         result = "0-1"
       case _:
         result = None
-    # result = self.result_var.get() if action == "save" else None
+    
     self.destroy()
     self.callback(self.game_id, action, result)
