@@ -70,3 +70,20 @@ class ChessAPIClient:
       print("API Error: Connection refused. Make sure uvicorn is running on port 8000")
     except Exception as e:
       print(f"API Error: An unexpected error occured: {e}")
+
+  def archive_game_sync(self, payload: dict) -> bool:
+    """
+    Saves a finished game to the database synchronously.
+    Payload should match the ArchivedGame model in FastAPI.
+    """
+    try:
+      response = requests.post(f"{self.base_url}/archive", json=payload, timeout=3)
+      if response.status_code == 200:
+        print(f"API: Parti lagret i arkivet! {response.json()}")
+        return True
+      else:
+        print(f"API Error: Kunne ikke lagre parti. Status: {response.status_code}")
+        return False
+    except Exception as e:
+      print(f"API Error under lagring av parti: {e}")
+      return False
