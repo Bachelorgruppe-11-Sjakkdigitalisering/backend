@@ -9,7 +9,7 @@ class MainPage(ctk.CTkFrame):
     self.controller = controller
 
     self.scroll_container = ctk.CTkScrollableFrame(self, label_text="Aktive partier")
-    self.scroll_container.pack(fill="both", expand=True, padx=10, pady=10)
+    self.scroll_container.pack(fill="both", expand=True)
 
     # Dictionary to keep track of the UI widgets for each game 
     # Format: { game_id: {"card": GameInfoCard, "btn_toggle": CTkButton} }

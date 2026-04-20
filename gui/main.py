@@ -9,6 +9,7 @@ from gui.components.stop_tracking_window import StopTrackingWindow
 from gui.components.log_frame import LogFrame
 from gui.pages.main_page import MainPage
 from gui.pages.pairings_page import PairingsPage
+from gui.pages.logs_page import LogPage
 from machine_learning.vision_thread import VisionThread
 from network.api_client import ChessAPIClient
 from utils.session_logger import SessionLogger
@@ -50,13 +51,12 @@ class MainAdminDashboard(ctk.CTk):
     self.btn_nav1.pack(pady=10, padx=20)
     self.btn_nav2 = ctk.CTkButton(self.nav_frame, text="Oppsett av partier", command=lambda: self.show_page("PairingsPage"))
     self.btn_nav2.pack(pady=10, padx=20)
-    self.btn_nav3 = ctk.CTkButton(self.nav_frame, text="Alle systemlogger")
+    self.btn_nav3 = ctk.CTkButton(self.nav_frame, text="Alle systemlogger", command=lambda: self.show_page("LogPage"))
     self.btn_nav3.pack(pady=10, padx=20)
 
     # System logs
     self.log_frame = LogFrame(self, max_display=50, label_text="Siste 50 hendelser")
     self.log_frame.grid(row=1, column=1, sticky="nsew", padx=20, pady=(0, 20))
-    self.logger.add_listener(self.log_frame.on_new_log)
 
     # Main view
     self.main_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -64,13 +64,18 @@ class MainAdminDashboard(ctk.CTk):
     self.main_container.grid_rowconfigure(0, weight=1)
     self.main_container.grid_columnconfigure(0, weight=1)
 
+
     # Initialize all pages and stack them in the container
     self.pages = {}
-    for PageClass in [MainPage, PairingsPage]:
+    for PageClass in [MainPage, PairingsPage, LogPage]:
       page_name = PageClass.__name__
       frame = PageClass(parent=self.main_container, controller=self)
       self.pages[page_name] = frame
       frame.grid(row=0, column=0, sticky="nsew")
+    
+    # Log listeners
+    self.logger.add_listener(self.log_frame.on_new_log)
+    self.logger.add_listener(self.pages["LogPage"].on_new_log)
 
     self.show_page("MainPage")
 
@@ -78,6 +83,13 @@ class MainAdminDashboard(ctk.CTk):
     """Brings the requested page to the front of the stacking order."""
     frame = self.pages[page_name]
     frame.tkraise()
+
+    if hasattr(self, "log_frame"):
+      # Hide log frame if user is on log page
+      if page_name == "LogPage":
+        self.log_frame.grid_remove()
+      else:
+        self.log_frame.grid()
 
   def get_page(self, page_name: str):
     """Fetches a view instance."""
