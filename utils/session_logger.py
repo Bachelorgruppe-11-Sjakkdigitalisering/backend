@@ -21,7 +21,7 @@ class SessionLogger:
     self.logs: List[LogEntry] = []
     self.max_history = max_history
     self.listeners: List[Callable[[LogEntry], None]] = []
-    self.lock = threading.lock()
+    self.lock = threading.Lock()
 
   def add_listener(self, listener: Callable[[LogEntry], None]):
     """Adds a function that will be called whenever a new log is created."""
@@ -33,7 +33,7 @@ class SessionLogger:
       listener(entry)
 
   def log(self, message: str):
-    self._add_log(LogEntry(LogLevel.LOG), message)
+    self._add_log(LogEntry(LogLevel.LOG, message))
 
   def warning(self, message: str):
     self._add_log(LogEntry(LogLevel.WARNING, message))

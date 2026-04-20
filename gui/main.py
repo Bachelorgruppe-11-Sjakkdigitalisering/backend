@@ -3,14 +3,15 @@ import cv2
 import queue
 import chess.pgn
 from PIL import Image
-from gui.components.game_info_card import GameInfoCard
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
 from gui.components.stop_tracking_window import StopTrackingWindow
+from gui.components.log_frame import LogFrame
 from gui.pages.main_page import MainPage
 from gui.pages.pairings_page import PairingsPage
 from machine_learning.vision_thread import VisionThread
 from network.api_client import ChessAPIClient
+from utils.session_logger import SessionLogger
 
 class MainAdminDashboard(ctk.CTk):
   def __init__(self):
@@ -29,12 +30,15 @@ class MainAdminDashboard(ctk.CTk):
     # Format: { game_id: {"queue": Queue, "worker": VisionThread, "pairing_data": dict} }
     self.active_sessions = {} 
 
+    # Logger
+    self.logger = SessionLogger(max_history=1000)
+
     self._build_ui()
     self._poll_vision_queues() 
 
   def _build_ui(self):
     # Configure layout of 2 rows and 2 columns
-    self.grid_rowconfigure(0, weight=1) # A non-zero weight makes this section expand to fill extra space
+    self.grid_rowconfigure(0, weight=1)
     self.grid_rowconfigure(1, weight=0)
     self.grid_columnconfigure(0, weight=0)
     self.grid_columnconfigure(1, weight=1)
@@ -42,17 +46,17 @@ class MainAdminDashboard(ctk.CTk):
     # Left navigation drawer
     self.nav_frame = ctk.CTkFrame(self)
     self.nav_frame.grid(row=0, column=0, rowspan=2, sticky="nsew")
-    self.btn_nav1 = ctk.CTkButton(self.nav_frame, text="Aktive kamper", command=lambda: self.show_page("MainPage"))
+    self.btn_nav1 = ctk.CTkButton(self.nav_frame, text="Aktive partier", command=lambda: self.show_page("MainPage"))
     self.btn_nav1.pack(pady=10, padx=20)
-    self.btn_nav2 = ctk.CTkButton(self.nav_frame, text="Oppsett av kamper", command=lambda: self.show_page("PairingsPage"))
+    self.btn_nav2 = ctk.CTkButton(self.nav_frame, text="Oppsett av partier", command=lambda: self.show_page("PairingsPage"))
     self.btn_nav2.pack(pady=10, padx=20)
+    self.btn_nav3 = ctk.CTkButton(self.nav_frame, text="Alle systemlogger")
+    self.btn_nav3.pack(pady=10, padx=20)
 
     # System logs
-    self.log_frame = ctk.CTkFrame(self)
-    self.log_frame.grid(row=1, column=1, sticky="nsew")
-    self.log_frame.grid_propagate(False)
-    self.log_sample = ctk.CTkLabel(self.log_frame, text="12:00:03 - Her er et eksempel på en logg.")
-    self.log_sample.pack()
+    self.log_frame = LogFrame(self, max_display=50, label_text="Siste 50 hendelser")
+    self.log_frame.grid(row=1, column=1, sticky="nsew", padx=20, pady=(0, 20))
+    self.logger.add_listener(self.log_frame.on_new_log)
 
     # Main view
     self.main_container = ctk.CTkFrame(self, fg_color="transparent")

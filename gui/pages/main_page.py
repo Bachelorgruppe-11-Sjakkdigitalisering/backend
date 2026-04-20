@@ -8,7 +8,7 @@ class MainPage(ctk.CTkFrame):
     super().__init__(parent, fg_color="transparent")
     self.controller = controller
 
-    self.scroll_container = ctk.CTkScrollableFrame(self)
+    self.scroll_container = ctk.CTkScrollableFrame(self, label_text="Aktive partier")
     self.scroll_container.pack(fill="both", expand=True, padx=10, pady=10)
 
     # Dictionary to keep track of the UI widgets for each game 
