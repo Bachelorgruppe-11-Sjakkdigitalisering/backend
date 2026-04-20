@@ -20,6 +20,9 @@ class MainAdminDashboard(ctk.CTk):
     self.geometry("1100x800")
     self.title("Sjakkdigitalisering Admin Panel")
 
+    # Logger
+    self.logger = SessionLogger(max_history=1000)
+
     self.api_client = ChessAPIClient(logger=self.logger)
     self.live_window = None
     self.live_camera_id = None
@@ -30,9 +33,6 @@ class MainAdminDashboard(ctk.CTk):
     # Dictionary to hold active vision threads and queues
     # Format: { game_id: {"queue": Queue, "worker": VisionThread, "pairing_data": dict} }
     self.active_sessions = {} 
-
-    # Logger
-    self.logger = SessionLogger(max_history=1000)
 
     self._build_ui()
     self._poll_vision_queues() 
