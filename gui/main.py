@@ -331,7 +331,7 @@ class MainAdminDashboard(ctk.CTk):
     
     # Start camera thread
     q = queue.Queue()
-    worker = VisionThread(q, camera_source=int(pairing["camera_id"]))
+    worker = VisionThread(q, camera_source=int(pairing["camera_id"]), logger=self.logger)
     worker.start_camera()
 
     # Store it in state

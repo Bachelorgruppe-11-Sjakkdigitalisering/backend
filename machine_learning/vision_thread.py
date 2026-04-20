@@ -17,8 +17,11 @@ class VisionThread(threading.Thread):
   Background thread that captures video and runs heavy AI models.
   Keeps the main GUI thread from freezing.
   """
-  def __init__(self, frame_queue: queue.Queue, camera_source=0):
+  def __init__(self, frame_queue: queue.Queue, logger, camera_source=0):
     super().__init__(daemon=True)
+
+    # Logger
+    self.logger = logger
 
     # Thread and IO state
     self.frame_queue = frame_queue
@@ -70,7 +73,7 @@ class VisionThread(threading.Thread):
 
   def trigger_auto_calibration(self):
     """Drops the current perspective and starts and automatic recalibration."""
-    print("Vision: Starting auto-calibration...")
+    self.logger.log("Vision: Starter auto kalibrering...")
     self.unlock_board()
     self.is_auto_calibrating = True
     self.calibration_start_time = time.time()
@@ -80,17 +83,17 @@ class VisionThread(threading.Thread):
     """Locks the perspective on the board based on recent frames."""
     self.M, self.M_inv = chessboard.lock_perspective(self.history)
     if self.M is not None:
-      print("Vision: Board perspective locked successfully!")
+      self.logger.log("Vision: Brettperspektiv ble låst uten problemer!")
       self.show_boxes = False
 
       self.motion_detector.reset()
       self.board_is_setup = False
     else:
-      print("Vision: Not enough data to lock board yet.")
+      self.logger.warning("Vision: Ikke nok data til å låse brettet enda.")
 
   def unlock_board(self):
     """Drops the current perspective lock so the board can be recalibrated."""
-    print("Vision: Board unlocked. Recalibrating...")
+    self.logger.log("Vision: Brett ble låst opp. Rekalibrerer...")
     self.show_boxes = True
     self.M = None
     self.M_inv = None
@@ -99,7 +102,7 @@ class VisionThread(threading.Thread):
   def set_clock_roi(self, roi):
     """Updates the ROI for the clock cutout. roi is a tuple like this: (x, y, w, h)"""
     self.clock_roi = roi
-    print(f"Vision: Clock ROI set to {roi}")
+    self.logger.log(f"Vision: Klokke ROI ble satt til {roi}")
 
   def run(self):
     """The main loop running in the background thread."""
@@ -124,7 +127,7 @@ class VisionThread(threading.Thread):
       # Send to GUI
       self._send_to_gui(frame, board_display, clock_display)
 
-    print("VisionThread: Thread stopped. Releasing camera...")
+    self.logger.log("Vision: Tråd stoppet. Frigjør kamera...")
     if self.cap and self.cap.isOpened():
       self.cap.release()
 
@@ -149,7 +152,7 @@ class VisionThread(threading.Thread):
       elif time.time() - self.calibration_start_time > 5.0:
         self.is_auto_calibrating = False
         self.latest_status_message = "Status: FEIL! Finner ikke brett. Sjekk kamera"
-        print("Vision: Auto-calibration timed out.")
+        self.logger.warning("Vision: Auto kalibrering timet ut. Prøv på nytt.")
 
     return display_frame
   
@@ -164,7 +167,7 @@ class VisionThread(threading.Thread):
     if not self.board_is_setup and motion_state == "IDLE":
       self.reference_occupied = moves.get_occupied_squares_on_raw_frame(frame, self.piece_model, self.M)
       self.board_is_setup = True
-      print(f"Initial board setup complete! {len(self.reference_occupied)} pieces found.")
+      self.logger.log(f"Brettet er klart! Fant {len(self.reference_occupied)} brikker.")
 
     elif motion_state == "MOTION":
       if self.is_checking_move:
@@ -183,7 +186,7 @@ class VisionThread(threading.Thread):
       move = moves.detect_move(self.reference_occupied, current_occupied, self.current_board)
 
       if move:
-        print(f"MOVE DETECTED on attempt {self.check_counter} -> {move.uci()}")
+        self.logger.log(f"Fant trekk på forsøk {self.check_counter} -> {move.uci()}")
         self.current_board.push(move)
         self.reference_occupied = current_occupied
         game = chess.pgn.Game.from_board(self.current_board)
@@ -195,7 +198,7 @@ class VisionThread(threading.Thread):
         self.is_checking_move = False
 
       elif self.check_counter >= self.MAX_CHECKS:
-        print(f"Timed out. Tried {self.check_counter} times but found no legal move.")
+        self.logger.warning(f"Timed out. Prøvde {self.check_counter} ganger, men fant ingen lovlige trekk.")
         self.is_checking_move = False
 
     if self.show_piece_boxes:
