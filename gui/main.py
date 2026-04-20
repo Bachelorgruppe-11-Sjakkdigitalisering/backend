@@ -359,5 +359,20 @@ class MainAdminDashboard(ctk.CTk):
     worker = self.active_sessions[game_id]["worker"]
     worker.trigger_auto_calibration()
 
+  def remove_pairing(self, game_id: int):
+    """Removes a planned game from the system."""
+    if game_id in self.active_sessions:
+      self.logger.warning(f"Kan ikke slette parti {game_id} fordi det er aktivt. Stopp tracking først.")
+      return
+    
+    # Removes game from list of all games
+    self.tournament_pairings = [p for p in self.tournament_pairings if p["game_id"] != game_id]
+    self.logger.log(f"Slettet oppsett for parti {game_id}.")
+
+    # Re-render UI
+    pairings_page = self.get_page("PairingsPage")
+    if pairings_page:
+      pairings_page.render_pairings_list(self.tournament_pairings)
+
 app = MainAdminDashboard()
 app.mainloop()

@@ -161,13 +161,26 @@ class PairingsPage(ctk.CTkFrame):
       label = ctk.CTkLabel(card, text=text, anchor="w")
       label.grid(row=0, column=0, sticky="w", padx=10, pady=10)
 
+      btn_frame = ctk.CTkFrame(card, fg_color="transparent")
+      btn_frame.grid(row=0, column=1, sticky="e", padx=10, pady=10)
+
       if pairing.get("status") != "active":
+        # Start game
         btn_start = ctk.CTkButton(
-          card,
+          btn_frame,
           text="Start tracking",
           command=lambda game_id=pairing['game_id']: self.controller.start_tracking_game(game_id)
         )
-        btn_start.grid(row=0, column=1, sticky="e", padx=10, pady=10)
+        btn_start.pack(side="left", padx=(0, 5))
+
+        # Remove game
+        btn_delete = ctk.CTkButton(
+          btn_frame,
+          text="Slett",
+          fg_color="#c93434", hover_color="#9e2a2a", width=60,
+          command=lambda game_id=pairing['game_id']: self.controller.remove_pairing(game_id)
+        )
+        btn_delete.pack(side="left")
       else:
         status_label = ctk.CTkLabel(card, text="Aktiv", text_color="green")
         status_label.grid(row=0, column=1, sticky="e", padx=10, pady=10)
