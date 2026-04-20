@@ -20,7 +20,7 @@ class MainAdminDashboard(ctk.CTk):
     self.geometry("1100x800")
     self.title("Sjakkdigitalisering Admin Panel")
 
-    self.api_client = ChessAPIClient()
+    self.api_client = ChessAPIClient(logger=self.logger)
     self.live_window = None
     self.live_camera_id = None
 

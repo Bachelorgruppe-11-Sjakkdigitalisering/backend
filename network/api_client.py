@@ -3,8 +3,9 @@ import threading
 
 class ChessAPIClient:
   """Handles communication with the FastAPI backend asynchronously."""
-  def __init__(self, base_url="http://127.0.0.1:8000/api"):
+  def __init__(self, logger, base_url="http://127.0.0.1:8000/api"):
     self.base_url = base_url
+    self.logger = logger
 
   def search_players_sync(self, query:str) -> list:
     """
@@ -17,17 +18,17 @@ class ChessAPIClient:
       if response.status_code == 200:
         return response.json()
       else:
-        print(f"API Error: Failed to fetch players. Status: {response.status_code}")
+        self.logger.error(f"API Error: Klarte ikke hente spillere. Status: {response.status_code}")
         return []
       
     except requests.exceptions.Timeout:
-      print("API Error: Search request timed out.")
+      self.logger.error("API Error: Search request timed out.")
       return []
     except requests.exceptions.ConnectionError:
-      print("API Error: Connection refused. Is FastAPI running on port 8000?")
+      self.logger.error("API Error: Tilkobling feilet.")
       return []
     except Exception as e:
-      print(f"API Error during player search: {e}")
+      self.logger.error(f"API Error: Feil under spillersøk: {e}")
       return []
     
   def create_player_sync(self, name: str) -> dict:
@@ -42,10 +43,10 @@ class ChessAPIClient:
       if response.status_code == 200:
         return response.json()
       else:
-        print(f"API Error: Could not create player. Status: {response.status_code}")
+        self.logger(f"API Error: Kunne ikke lage spiller. Status: {response.status_code}")
         return None
     except Exception as e:
-      print(f"API Error during player creation: {e}")
+      self.logger(f"API Error: Kunne ikke lage spiller: {e}")
       return None
 
   def sync_game_state(self, payload: dict):
@@ -60,16 +61,16 @@ class ChessAPIClient:
       response = requests.post(f"{self.base_url}/update", json=payload, timeout=5)
 
       if response.status_code == 200:
-        print(f"API: Sync successful. Server responded: {response.json()}")
+        self.logger.log(f"API: Suksessfull sync. Server svarte: {response.json()}")
       else:
-        print(f"API Error: Server returned status {response.status_code}: {response.text}")
+        self.logger.error(f"API Error: Server svarte: {response.status_code}: {response.text}")
       
     except requests.exceptions.Timeout:
-      print("API Error: Request timed out. Is the FastAPI server running?")
+      self.logger.error("API Error: Request timed out.")
     except requests.exceptions.ConnectionError:
-      print("API Error: Connection refused. Make sure uvicorn is running on port 8000")
+      self.logger.error("API Error: Tilkobling feilet.")
     except Exception as e:
-      print(f"API Error: An unexpected error occured: {e}")
+      self.logger.error(f"API Error: En uforventet feil oppstod: {e}")
 
   def archive_game_sync(self, payload: dict) -> bool:
     """
@@ -79,13 +80,13 @@ class ChessAPIClient:
     try:
       response = requests.post(f"{self.base_url}/archive", json=payload, timeout=3)
       if response.status_code == 200:
-        print(f"API: Parti lagret i arkivet! {response.json()}")
+        self.logger.log(f"API: Parti lagret i arkivet! {response.json()}")
         return True
       else:
-        print(f"API Error: Kunne ikke lagre parti. Status: {response.status_code}")
+        self.logger.error(f"API Error: Kunne ikke lagre parti. Status: {response.status_code}")
         return False
     except Exception as e:
-      print(f"API Error under lagring av parti: {e}")
+      self.logger.error(f"API Error under lagring av parti: {e}")
       return False
 
   def remove_live_game_sync(self, board_id: int):
@@ -95,8 +96,8 @@ class ChessAPIClient:
     try:
       response = requests.delete(f"{self.base_url}/game/{board_id}")
       if response.status_code == 200:
-        print(f"API: Parti {board_id} fjernet fra live-feeden på nettsiden.")
+        self.logger.log(f"API: Parti {board_id} fjernet fra live-feeden på nettsiden.")
       else:
-        print(f"API Advarsel: Fikk status {response.status_code} ved fjerning av live-parti.")
+        self.logger.warning(f"API Advarsel: Fikk status {response.status_code} ved fjerning av live-parti.")
     except Exception as e:
-      print(f"API Error: Kunne ikke kontakte server for å fjerne live-parti: {e}")
+      self.logger.error(f"API Error: Kunne ikke kontakte server for å fjerne live-parti: {e}")
