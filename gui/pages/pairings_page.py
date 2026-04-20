@@ -67,7 +67,7 @@ class PairingsPage(ctk.CTkFrame):
     """Callback for when a user selects a player from the dropdown."""
     self.selected_players[color]["id"] = player_data['id']
     self.selected_players[color]["name"] = player_data['name']
-    print(f"{color} spiller valgt: {player_data['name']}")
+    self.controller.logger.log(f"{color} spiller valgt: {player_data['name']}")
 
   def _on_player_create_new(self, color, player_name):
     """Pops up a confirmation dialog before creating a new player."""
@@ -92,9 +92,9 @@ class PairingsPage(ctk.CTkFrame):
       if new_player:
         self.selected_players[color]["id"] = new_player['id']
         self.selected_players[color]["name"] = new_player['name']
-        print(f"Opprettet og valgte {color} spiller: {new_player['name']} (ID: {new_player['id']})")
+        self.controller.logger.log(f"Opprettet og valgte {color} spiller: {new_player['name']} (ID: {new_player['id']})")
       else:
-        print("Kunne ikke opprette spilleren")
+        self.controller.logger.error("ERROR: Kunne ikke opprette spilleren")
 
     def on_cancel():
       dialog.destroy()
@@ -116,7 +116,7 @@ class PairingsPage(ctk.CTkFrame):
     black = self.selected_players["black"]
 
     if not white["id"] or not black["id"]:
-      print("Advarsel: Du må velge både hvit og svart spiller!")
+      self.controller.logger.warning("Advarsel: Du må velge både hvit og svart spiller!")
       return
 
     data = {
