@@ -216,7 +216,7 @@ class VisionThread(threading.Thread):
     x, y = max(0, x), max(0, y)
     clock_crop = frame[y:y+h, x:x+w]
 
-    clock_results = self.clock_model(clock_crop, verbose=False)
+    clock_results = self.clock_model(clock_crop, conf=0.3, iou=0.1, verbose=False, agnostic_nms=True)
 
     if len(clock_results) > 0:
       raw_left, raw_right = ClockLogic.detections_to_time(clock_results[0], w)

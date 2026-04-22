@@ -308,7 +308,8 @@ class MainAdminDashboard(ctk.CTk):
       "white_id": data["white_id"],
       "black_name": data["black_name"],
       "black_id": data["black_id"],
-      "status": "planned" # Can be 'planned', 'active', or 'finished'
+      "status": "planned", # Can be 'planned', 'active', or 'finished'
+      "initial_seconds": data.get("initial_seconds", None)
     }
 
     # Save to controller state
@@ -336,7 +337,9 @@ class MainAdminDashboard(ctk.CTk):
     # Ready clock state
     initial_seconds = pairing.get("initial_seconds", None) # Defaults to None if missing
     worker.clock_state.left_tracker.value = initial_seconds
+    worker.clock_state.left_tracker.candidate = initial_seconds
     worker.clock_state.right_tracker.value = initial_seconds
+    worker.clock_state.right_tracker.candidate = initial_seconds
 
     worker.start_camera()
 

@@ -136,24 +136,28 @@ class PairingsPage(ctk.CTkFrame):
       return
     
     # Parse time inputs
-    try:
-      hour_str = self.entry_hours.get().strip()
-      minute_str = self.entry_minutes.get().strip()
-      second_str = self.entry_seconds.get().strip()
+    hour_str = self.entry_hours.get().strip()
+    minute_str = self.entry_minutes.get().strip()
+    second_str = self.entry_seconds.get().strip()
 
-      hours = int(hour_str) if hour_str else 0
-      minutes = int(minute_str) if minute_str else 0
-      seconds = int(second_str) if second_str else 0
+    if not hour_str and not minute_str and not second_str:
+      initial_seconds = None
+    else:
+      try:
+        hours = int(hour_str) if hour_str else 0
+        minutes = int(minute_str) if minute_str else 0
+        seconds = int(second_str) if second_str else 0
 
-      initial_seconds = (hours * 3600) + (minutes * 60) + seconds
+        initial_seconds = (hours * 3600) + (minutes * 60) + seconds
 
-      if initial_seconds <= 0:
-        self.controller.logger.warning("Advarsel: Tidskontrollen må være større enn 0 sekunder hvis du vil bruke klokka.")
+        if initial_seconds <= 0:
+          self.controller.logger.warning("Advarsel: Tidskontrollen må være større enn 0 sekunder hvis du vil bruke klokka.\n" \
+          "Hvis du ikke vil bruke klokke, la alle tidskontroll felter stå tomme.")
+          return
+        
+      except ValueError:
+        self.controller.logger.error("Tidskontroll Error: Vennligst bruk kun tall for tidskontrollen.")
         return
-      
-    except ValueError:
-      self.controller.logger.error("Tidskontroll Error: Vennligst bruk kun tall for tidskontrollen.")
-      return
 
     data = {
       "white_name": white["name"],

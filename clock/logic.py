@@ -54,6 +54,7 @@ class ClockLogic:
     """
     Converts raw YOLO string to seconds. 
     Uses a reference time to find out difference between hh:mm and mm:ss for 3 and 4 digit displays.
+    Includes a check to drop impossible YOLO hallucinations.
     """
     if not raw_string:
       return None
@@ -64,11 +65,12 @@ class ClockLogic:
       return None
     
     length = len(clean_string)
+    parsed_seconds = None
 
     try:
       if length >= 5:
         # 5+ digits is always H:MM:SS
-        return (int(clean_string[:-4]) * 3600) + (int(clean_string[-4:-2]) * 60) + int(clean_string[-2:])
+        parsed_seconds = (int(clean_string[:-4]) * 3600) + (int(clean_string[-4:-2]) * 60) + int(clean_string[-2:])
       
       elif length == 3 or length == 4:
         # Could be H:MM or MM:SS
@@ -79,16 +81,22 @@ class ClockLogic:
         option_mm_ss = (val_1 * 60) + val_2
 
         if reference_seconds is None:
-          return option_hh_mm if option_hh_mm >= 3600 else option_mm_ss
-        
-        diff_hh_mm = abs(reference_seconds - option_hh_mm)
-        diff_mm_ss = abs(reference_seconds - option_mm_ss)
-
-        return option_hh_mm if diff_hh_mm < diff_mm_ss else option_mm_ss
+          parsed_seconds = option_hh_mm if option_hh_mm >= 3600 else option_mm_ss
+        else:
+          diff_hh_mm = abs(reference_seconds - option_hh_mm)
+          diff_mm_ss = abs(reference_seconds - option_mm_ss)
+          parsed_seconds = option_hh_mm if diff_hh_mm < diff_mm_ss else option_mm_ss
       
       else:
         # 1 or 2 digits is always seconds
-        return int(clean_string)
+        parsed_seconds = int(clean_string)
+
+      if reference_seconds is not None and parsed_seconds is not None:
+        # If the YOLO reading jumps by more than 3600 seconds it has probably hallucinated. Drop the frame.
+        if abs(parsed_seconds - reference_seconds) > 3600:
+          return None
+        
+      return parsed_seconds
       
     except ValueError:
       return None
