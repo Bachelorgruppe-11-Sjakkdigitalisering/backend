@@ -53,6 +53,22 @@ class PairingsPage(ctk.CTkFrame):
     self.entry_camera_id = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. 0")
     self.entry_camera_id.pack(fill="x", padx=20, pady=(0, 20))
 
+    # Time control
+    ctk.CTkLabel(self.left_panel, text="Tidskontroll (starttid)").pack(anchor="w", padx=20)
+    self.time_frame = ctk.CTkFrame(self.left_panel, fg_color="transparent")
+    self.time_frame.pack(fill="x", padx=20, pady=(0, 20))
+    self.time_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="time_cols")
+    # Hours
+    self.entry_hours = ctk.CTkEntry(self.time_frame, placeholder_text="Timer (f.eks 1)")
+    self.entry_hours.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+    # Minutes
+    self.entry_minutes = ctk.CTkEntry(self.time_frame, placeholder_text="Minutter (f.eks 30)")
+    self.entry_minutes.grid(row=0, column=1, padx=5, sticky="ew")
+    # Seconds
+    self.entry_seconds = ctk.CTkEntry(self.time_frame, placeholder_text="Sekunder (f.eks 0)")
+    self.entry_seconds.grid(row=0, column=2, padx=(5, 0), sticky="ew")
+
+
     # Submit button
     self.btn_add = ctk.CTkButton(self.left_panel, text="Legg til par", command=self._on_add_clicked)
     self.btn_add.pack(padx=20, pady=10)
@@ -118,13 +134,34 @@ class PairingsPage(ctk.CTkFrame):
     if not white["id"] or not black["id"]:
       self.controller.logger.warning("Advarsel: Du må velge både hvit og svart spiller!")
       return
+    
+    # Parse time inputs
+    try:
+      hour_str = self.entry_hours.get().strip()
+      minute_str = self.entry_minutes.get().strip()
+      second_str = self.entry_seconds.get().strip()
+
+      hours = int(hour_str) if hour_str else 0
+      minutes = int(minute_str) if minute_str else 0
+      seconds = int(second_str) if second_str else 0
+
+      initial_seconds = (hours * 3600) + (minutes * 60) + seconds
+
+      if initial_seconds <= 0:
+        self.controller.logger.warning("Advarsel: Tidskontrollen må være større enn 0 sekunder hvis du vil bruke klokka.")
+        return
+      
+    except ValueError:
+      self.controller.logger.error("Tidskontroll Error: Vennligst bruk kun tall for tidskontrollen.")
+      return
 
     data = {
       "white_name": white["name"],
       "white_id": white["id"],
       "black_name": black["name"],
       "black_id": black["id"],
-      "camera_id": self.entry_camera_id.get().strip()
+      "camera_id": self.entry_camera_id.get().strip(),
+      "initial_seconds": initial_seconds
     }
     self.controller.handle_new_pairing(data)
 
@@ -134,8 +171,11 @@ class PairingsPage(ctk.CTkFrame):
     self.selected_players["white"]["widget"].entry_search.delete(0, "end")
     self.selected_players["black"]["widget"].entry_search.delete(0, "end")
     
-    # Clear camera
+    # Clear camera and time
     self.entry_camera_id.delete(0, "end")
+    self.entry_hours.delete(0, "end")
+    self.entry_minutes.delete(0, "end")
+    self.entry_seconds.delete(0, "end")
     
     # Reset internal state
     for color in ["white", "black"]:
