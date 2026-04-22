@@ -53,6 +53,17 @@ class PairingsPage(ctk.CTkFrame):
     self.entry_camera_id = ctk.CTkEntry(self.left_panel, placeholder_text="F.eks. 0")
     self.entry_camera_id.pack(fill="x", padx=20, pady=(0, 20))
 
+    # Orientation switch
+    ctk.CTkLabel(self.left_panel, text="Hvit spillers plassering i forhold til kamera").pack(anchor="w", padx=20)
+    self.white_side_var = ctk.StringVar(value="Venstre")
+    self.switch_side = ctk.CTkSegmentedButton(
+      self.left_panel,
+      values=["Venstre", "Høyre"],
+      variable=self.white_side_var
+    )
+    self.switch_side.pack(fill="x", padx=20, pady=(0, 20))
+
+
     # Time control
     ctk.CTkLabel(self.left_panel, text="Tidskontroll (starttid)").pack(anchor="w", padx=20)
     self.time_frame = ctk.CTkFrame(self.left_panel, fg_color="transparent")
@@ -158,6 +169,12 @@ class PairingsPage(ctk.CTkFrame):
       except ValueError:
         self.controller.logger.error("Tidskontroll Error: Vennligst bruk kun tall for tidskontrollen.")
         return
+      
+    side_selection = self.white_side_var.get()
+    if side_selection == "Venstre":
+      white_side = "left"
+    else:
+      white_side = "right"
 
     data = {
       "white_name": white["name"],
@@ -165,7 +182,8 @@ class PairingsPage(ctk.CTkFrame):
       "black_name": black["name"],
       "black_id": black["id"],
       "camera_id": self.entry_camera_id.get().strip(),
-      "initial_seconds": initial_seconds
+      "initial_seconds": initial_seconds,
+      "white_side": white_side
     }
     self.controller.handle_new_pairing(data)
 
