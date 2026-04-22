@@ -23,8 +23,8 @@ class GameState(Game):
   """
   board_id: int
   fen: str
-  white_time: str
-  black_time: str
+  white_time: Optional[int] = None
+  black_time: Optional[int] = None
   is_active: bool = True
 
 # archived game database model

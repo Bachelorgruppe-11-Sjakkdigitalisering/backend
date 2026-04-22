@@ -334,7 +334,7 @@ class MainAdminDashboard(ctk.CTk):
     worker = VisionThread(q, camera_source=int(pairing["camera_id"]), logger=self.logger)
 
     # Ready clock state
-    initial_seconds = pairing.get("initial_seconds", 0) # Defaults to 0 if missing
+    initial_seconds = pairing.get("initial_seconds", None) # Defaults to None if missing
     worker.clock_state.left_tracker.value = initial_seconds
     worker.clock_state.right_tracker.value = initial_seconds
 

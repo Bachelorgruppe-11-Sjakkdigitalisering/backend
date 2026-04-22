@@ -1,4 +1,4 @@
-from logic import ClockLogic
+from clock.logic import ClockLogic
 
 class ClockState:
   """
@@ -101,7 +101,7 @@ class StableTimeTracker:
     # confirm change
     # only update the real value if we meet the consistency requirement
     if self.consistency_count >= self.required:
-      if self.candidate != self.value and len(self.candidate) > 0:
+      if self.candidate != self.value and self.candidate is not None:
         self.value = self.candidate
         return True
       
