@@ -1,3 +1,5 @@
+import re
+
 class ClockLogic:
   """
   Contains the logic for the clock.
@@ -46,3 +48,47 @@ class ClockLogic:
     time_right = "".join([d[1] for d in right_digits])
         
     return time_left, time_right
+
+  @staticmethod
+  def parse_to_seconds(raw_string: str, reference_seconds: int | None = None) -> int | None:
+    """
+    Converts raw YOLO string to seconds. 
+    Uses a reference time to find out difference between hh:mm and mm:ss for 3 and 4 digit displays.
+    """
+    if not raw_string:
+      return None
+    
+    # Strip everything that isn't a digit
+    clean_string = re.sub(r'\D', '', raw_string)
+    if not clean_string:
+      return None
+    
+    length = len(clean_string)
+
+    try:
+      if length >= 5:
+        # 5+ digits is always H:MM:SS
+        return (int(clean_string[:-4]) * 3600) + (int(clean_string[-4:-2]) * 60) + int(clean_string[-2:])
+      
+      elif length == 3 or length == 4:
+        # Could be H:MM or MM:SS
+        val_1 = int(clean_string[:-2]) # Hours or Minutes
+        val_2 = int(clean_string[-2:]) # Minutes or Seconds
+
+        option_hh_mm = (val_1 * 3600) + (val_2 * 60)
+        option_mm_ss = (val_1 * 60) + val_2
+
+        if reference_seconds is None:
+          return option_hh_mm if option_hh_mm >= 3600 else option_mm_ss
+        
+        diff_hh_mm = abs(reference_seconds - option_hh_mm)
+        diff_mm_ss = abs(reference_seconds - option_mm_ss)
+
+        return option_hh_mm if diff_hh_mm < diff_mm_ss else option_mm_ss
+      
+      else:
+        # 1 or 2 digits is always seconds
+        return int(clean_string)
+      
+    except ValueError:
+      return None

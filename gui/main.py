@@ -332,6 +332,12 @@ class MainAdminDashboard(ctk.CTk):
     # Start camera thread
     q = queue.Queue()
     worker = VisionThread(q, camera_source=int(pairing["camera_id"]), logger=self.logger)
+
+    # Ready clock state
+    initial_seconds = pairing.get("initial_seconds", 0) # Defaults to 0 if missing
+    worker.clock_state.left_tracker.value = initial_seconds
+    worker.clock_state.right_tracker.value = initial_seconds
+
     worker.start_camera()
 
     # Store it in state
@@ -339,8 +345,8 @@ class MainAdminDashboard(ctk.CTk):
       "queue": q,
       "worker": worker,
       "pairing_data": pairing,
-      "white_time": "",
-      "black_time": ""
+      "white_time": initial_seconds,
+      "black_time": initial_seconds
     }
     pairing["status"] = "active"
 

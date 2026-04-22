@@ -1,3 +1,5 @@
+from logic import ClockLogic
+
 class ClockState:
   """
   Tracks the game flow to determine which side is white.
@@ -9,7 +11,7 @@ class ClockState:
     self.left_tracker = StableTimeTracker(required_consistency=8)
     self.right_tracker = StableTimeTracker(required_consistency=8)
 
-  def process(self, current_left, current_right):
+  def process(self, current_left_raw, current_right_raw):
     """
     Takes the current times, compares them to history, 
     and returns a dictionary with identified white and black times.
@@ -17,9 +19,15 @@ class ClockState:
     :param current_left: The current left time.
     :param current_right: The current right time.
     """
+    left_hint = self.left_tracker.value
+    right_hint = self.right_tracker.value
+
+    current_left_sec = ClockLogic.parse_to_seconds(current_left_raw, left_hint)
+    current_right_sec = ClockLogic.parse_to_seconds(current_right_raw, right_hint)
+
     # update tracker and check for changes
-    left_changed = self.left_tracker.update(current_left)
-    right_changed = self.right_tracker.update(current_right)
+    left_changed = self.left_tracker.update(current_left_sec)
+    right_changed = self.right_tracker.update(current_right_sec)
 
     # game logic, determine white if unknown
     if self.white_side is None:
