@@ -5,7 +5,7 @@ class ClockState:
   Tracks the game flow to determine which side is white.
   """
   def __init__(self):
-    self.white_side = None # 'left' or 'right'
+    self.white_side = "left"
 
     # use helpers for different sides
     self.left_tracker = StableTimeTracker(required_consistency=8)
@@ -26,26 +26,11 @@ class ClockState:
     current_right_sec = ClockLogic.parse_to_seconds(current_right_raw, right_hint)
 
     # update tracker and check for changes
-    left_changed = self.left_tracker.update(current_left_sec)
-    right_changed = self.right_tracker.update(current_right_sec)
-
-    # game logic, determine white if unknown
-    if self.white_side is None:
-      self._determine_side(left_changed, right_changed)
+    self.left_tracker.update(current_left_sec)
+    self.right_tracker.update(current_right_sec)
 
     # return formatted result
     return self._format_output()
-  
-  def _determine_side(self, left_changed, right_changed):
-    """
-    Decides who is white based on who moved first.
-    """
-    if left_changed and not right_changed:
-      print("confirmed change on LEFT. left is white.")
-      self.white_side = "left"
-    elif right_changed and not left_changed:
-      print("confirmed change on RIGHT. right is white.")
-      self.white_side = "right"
 
   def _format_output(self):
     """

@@ -192,6 +192,9 @@ class PairingsPage(ctk.CTkFrame):
     # Clear the custom autocomplete text boxes
     self.selected_players["white"]["widget"].entry_search.delete(0, "end")
     self.selected_players["black"]["widget"].entry_search.delete(0, "end")
+
+    # Reset side toggle switch
+    self.white_side_var.set("Venstre")
     
     # Clear camera and time
     self.entry_camera_id.delete(0, "end")

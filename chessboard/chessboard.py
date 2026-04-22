@@ -28,10 +28,15 @@ def extract_corners(results):
         return sort_points(pts)
     return None
 
-def lock_perspective(history):
+def lock_perspective(history, white_side="right"):
     if len(history) > 0:
         avg_corners = np.mean(history, axis=0).astype("float32")
-        target_pts = np.float32([[0,0], [800,0], [800,800], [0,800]])
+
+        if white_side == "left":
+            # Rotate image 180 deg
+            target_pts = np.float32([[800,800], [0,800], [0,0], [800,0]])
+        else:
+            target_pts = np.float32([[0,0], [800,0], [800,800], [0,800]])
         M = cv2.getPerspectiveTransform(avg_corners, target_pts)
         M_inv = cv2.getPerspectiveTransform(target_pts, avg_corners)
         return M, M_inv

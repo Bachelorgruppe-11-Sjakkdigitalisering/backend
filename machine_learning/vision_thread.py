@@ -81,7 +81,8 @@ class VisionThread(threading.Thread):
 
   def lock_board(self):
     """Locks the perspective on the board based on recent frames."""
-    self.M, self.M_inv = chessboard.lock_perspective(self.history)
+    white_side = self.clock_state.white_side
+    self.M, self.M_inv = chessboard.lock_perspective(self.history, white_side)
     if self.M is not None:
       self.logger.log("Vision: Brettperspektiv ble låst uten problemer!")
       self.show_boxes = False

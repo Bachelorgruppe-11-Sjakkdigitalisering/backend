@@ -340,6 +340,7 @@ class MainAdminDashboard(ctk.CTk):
     worker.clock_state.left_tracker.candidate = initial_seconds
     worker.clock_state.right_tracker.value = initial_seconds
     worker.clock_state.right_tracker.candidate = initial_seconds
+    worker.clock_state.white_side = pairing.get("white_side", "left") # Default to left
 
     worker.start_camera()
 
