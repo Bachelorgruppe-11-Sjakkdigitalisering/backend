@@ -5,7 +5,7 @@ class MotionDetector:
   """
   Detects whan a hand enters and leaves the chessboard.
   """
-  def __init__(self, movement_threshold=5000, required_still_frames=15):
+  def __init__(self, movement_threshold=500, required_still_frames=6):
     """
     movement_threshold: the number of pixels needing to change to count as motion
     

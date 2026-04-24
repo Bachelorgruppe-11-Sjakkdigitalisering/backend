@@ -49,7 +49,7 @@ class VisionThread(threading.Thread):
     self.board_is_setup = False
     self.latest_move = None
     self.show_piece_boxes = True
-    self.motion_detector = MotionDetector(movement_threshold=5000, required_still_frames=15)
+    self.motion_detector = MotionDetector()
 
     # Retry logic state
     self.is_checking_move = False

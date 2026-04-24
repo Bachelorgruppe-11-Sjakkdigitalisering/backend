@@ -101,6 +101,7 @@ def try_en_passant(lost, current_board):
 def detect_move(reference_occupied, current_occupied, current_board):
 
     lost, gained, changed = get_board_diff(reference_occupied, current_occupied)
+    print(f"lost: {lost}, gained: {gained}, changed: {changed}")
     
     if not lost and not gained and not changed:
         return None
