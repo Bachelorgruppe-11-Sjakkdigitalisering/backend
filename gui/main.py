@@ -309,7 +309,8 @@ class MainAdminDashboard(ctk.CTk):
       "black_name": data["black_name"],
       "black_id": data["black_id"],
       "status": "planned", # Can be 'planned', 'active', or 'finished'
-      "initial_seconds": data.get("initial_seconds", None)
+      "initial_seconds": data.get("initial_seconds", None),
+      "white_side": data.get("white_side", "left")
     }
 
     # Save to controller state
