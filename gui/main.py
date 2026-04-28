@@ -1,8 +1,9 @@
 import customtkinter as ctk
+import os
 import cv2
 import queue
 import chess.pgn
-from PIL import Image
+from PIL import Image, ImageTk
 from gui.components.live_feed_window import LiveFeedWindow
 from gui.components.roi_selector_window import ROISelectorWindow
 from gui.components.stop_tracking_window import StopTrackingWindow
@@ -386,4 +387,22 @@ class MainAdminDashboard(ctk.CTk):
       pairings_page.render_pairings_list(self.tournament_pairings)
 
 app = MainAdminDashboard()
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+icon_path = os.path.join(current_dir, "assets", "sjakk-logo-removebg-preview.ico")
+
+# Set the Dock/Taskbar Icon (macOS & Linux)
+try:
+  icon = Image.open(icon_path)
+  icon_photo = ImageTk.PhotoImage(icon)
+  app.iconphoto(True, icon_photo)
+except Exception as e:
+  pass
+
+# Set the Window Title Bar Icon (Windows only)
+try:
+  app.wm_iconbitmap(icon_path)
+except Exception:
+  pass
+
 app.mainloop()
