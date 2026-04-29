@@ -4,10 +4,11 @@ import chess
 import chess.pgn
 import requests
 
+# Constants for chessboard mapping.
 FILES = "abcdefgh"
 RANKS = "87654321"
 
-#avhenger at modellen som kjøres har disse id-ene til respektive brikker
+#mapping class ID's from the YOLO model to their respective color.
 COLOR_MAP = {
     0: "black", #  black-bishop
     1: "black", #  black-king
@@ -23,7 +24,8 @@ COLOR_MAP = {
     11: "white"  # white-rook
 }
 
-
+# Method for getting a overview over which fields on the board is covered by a chess piece.
+# This returns a dictonary og occupied squares.
 def get_occupied_squares_on_raw_frame(frame, model, M):
     results = model(frame, conf=0.3, verbose=False)
     occupied = {}
@@ -32,29 +34,29 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
         boxes = results[0].boxes.xyxy.cpu().numpy()
         classes = results[0].boxes.cls.cpu().numpy()
         for box, cls in zip(boxes, classes):
-            # Vi bruker bunnen av boksen (px, py) fordi det er der brikken 
-            # faktisk berører brettet.
+            # we use the bottom of the chess piece (px, py) because thats where the piece touches the board.
             h = box[3] - box[1] # høyden på boksen
             px = (box[0] + box[2]) / 2
-            py = box[3] - (h * 0.10) # senter av bunnen av brikken + 10 % reisning
+            py = box[3] - (h * 0.10) # bottom center of the box + 10 % lift.
             
-            # Transformer punktet fra kamera-koordinater til 800x800 systemet
+            # Transforms the point from camera perspective to the 800x800 view.
             point = np.array([[[px, py]]], dtype="float32")
             transformed_point = cv2.perspectiveTransform(point, M)[0][0]
             
             tx, ty = transformed_point[0], transformed_point[1]
             
-            # Finn kolonne og rad (0-7) i 800x800 rutenettet
+            # Determine grid coordinates (0-7) based on the 800px scale (100px per square).
             col = int(tx // 100)
             row = int(ty // 100)
             
+            # only record if the detected point falls within the 8x8 board boundary.
             if 0 <= col <= 7 and 0 <= row <= 7:
-                # Gjør om klasse-ID til farge.
                 piece_color = COLOR_MAP.get(int(cls), "unknown") 
                 occupied[(row, col)] = piece_color
                 
     return occupied
 
+# compares the previous board state to the current. returns a list of coordiantes of lost, gained and changed pieces.
 def get_board_diff(reference_occupied, current_occupied):
     """Returnerer lister over felter som er mistet, vunnet eller endret."""
     lost = [pos for pos in reference_occupied if pos not in current_occupied]
@@ -63,6 +65,7 @@ def get_board_diff(reference_occupied, current_occupied):
                and current_occupied[pos] != reference_occupied[pos]]
     return lost, gained, changed
 
+# Attempts to identify a standard move by checking all combinations of moves possible with the detected lost, gained and changed list.
 def try_standard_move(lost, gained, changed, current_board):
     from_candidates = lost
     to_candidates = gained + changed
@@ -81,6 +84,7 @@ def try_standard_move(lost, gained, changed, current_board):
                 return promo_move
     return None
 
+# checks if there is a legal castling move with the pieces detected.
 def try_castling(lost, current_board):
     for move in current_board.legal_moves:
         if current_board.is_castling(move):
@@ -90,6 +94,7 @@ def try_castling(lost, current_board):
                 return move
     return None
 
+# checks if there is a legal en passant capture move with the pieces detected.
 def try_en_passant(lost, current_board):
     for move in current_board.legal_moves:
         if current_board.is_en_passant(move):
@@ -98,22 +103,29 @@ def try_en_passant(lost, current_board):
                 return move
     return None
 
+# main move method which combines all of the special moves with the normal moves. Moves get detected by compared the current board state
+# to the last confirmed board state. the method will check all possible combinations involving the fields that has changed,
+# and determines what move are right by checking them against chess rule with python chess library.
 def detect_move(reference_occupied, current_occupied, current_board):
 
     lost, gained, changed = get_board_diff(reference_occupied, current_occupied)
     print(f"lost: {lost}, gained: {gained}, changed: {changed}")
     
+    # if no move is detcted, assume no move was made.
     if not lost and not gained and not changed:
         return None
 
+    # check for castling
     move = try_castling(lost, current_board)
     if move:
         return move
-      
+    
+    # check for en passant  
     move = try_en_passant(lost, current_board)
     if move:
         return move
     
+    #check for standard move
     move = try_standard_move(lost, gained, changed, current_board)
     if move:
         return move
