@@ -94,7 +94,7 @@ Prosjektet er testet med Pytest og en in-memory SQLite-database for å sikre at 
 Kjør alle tester med:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 For å se testdekning:

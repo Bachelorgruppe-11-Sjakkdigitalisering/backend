@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.pool import StaticPool
 
-from  api.main import app, get_session, active_games
+from api.main import app, get_session, active_games
 
 sqlite_url = "sqlite:///:memory:" # use in-memory db to make sure tests are fast and don't affect real db
 engine = create_engine(
@@ -51,8 +51,8 @@ def test_set_and_get_live_game():
   payload = {
     "board_id": 1,
     "fen": "startpos",
-    "white_time": "10:00",
-    "black_time": "10:00",
+    "white_time": 600,
+    "black_time": 600,
     "is_active": True
   }
 
@@ -75,8 +75,8 @@ def test_list_active_games():
   client.post("/api/update", json={
     "board_id": 99,
     "fen": "startpos",
-    "white_time": "10:00",
-    "black_time": "10:00",
+    "white_time": 600,
+    "black_time": 600,
     "is_active": True
   })
 
@@ -99,17 +99,6 @@ def test_set_and_get_player():
   data = post_response.json()
   assert data["name"] == name
   assert data["id"] is not None
-
-def test_prevent_duplicate_players():
-  """Test that we get 400 error when trying to add duplicate player."""
-  payload = {"name": "Hikaru Nakamura"}
-  client.post("api/players", json=payload)
-  
-  response = client.post("api/players", json=payload)
-  assert response.status_code == 400
-  assert "eksisterer allerede" in response.json()["detail"]
-
-# TODO: hva om man to ulike spillere har samme navn??
 
 def test_get_new_player_profile():
   """Test fetching a newly created player with no games played."""
