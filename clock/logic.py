@@ -93,7 +93,7 @@ class ClockLogic:
 
       if reference_seconds is not None and parsed_seconds is not None:
         # If the YOLO reading jumps by more than 3600 seconds it has probably hallucinated. Drop the frame.
-        if abs(parsed_seconds - reference_seconds) > 3600:
+        if abs(parsed_seconds - reference_seconds) >= 3600:
           return None
         
       return parsed_seconds
