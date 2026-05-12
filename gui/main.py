@@ -137,53 +137,52 @@ class MainAdminDashboard(ctk.CTk):
     Handles game logic all the time, and updates the UI only if live feed window is open.
     """
     for game_id, session in self.active_sessions.items():
-      q = session["queue"]
+      frame_q = session["queue"]
+      event_q = session.get("event_queue")
       pairing = session["pairing_data"]
+      
+      main_page = self.get_page("MainPage")
+
+      if event_q:
+        while not event_q.empty():
+          try:
+            event = event_q.get_nowait()
+            if event["type"] == "move":
+              if main_page:
+                main_page.update_game_status(game_id, f"Status: Siste trekk {event['move_uci']}")
+
+              payload = {
+                "board_id": game_id,
+                "white_player_name": pairing["white_name"],
+                "white_player_id": pairing["white_id"],
+                "black_player_name": pairing["black_name"],
+                "black_player_id":pairing["black_id"],
+                "fen": event["fen"],
+                "pgn": event["pgn"],
+                "white_time": session["white_time"],
+                "black_time": session["black_time"],
+                "is_active": True
+              }
+              self.api_client.sync_game_state(payload)
+          except queue.Empty:
+            break
 
       try:
-        data = q.get_nowait()
-        main_page = self.get_page("MainPage")
-
-        status_msg = data.get("status_message")
-        if status_msg and main_page:
-          main_page.update_game_status(game_id, status_msg)
+        data = frame_q.get_nowait()
 
         # Update Clock State for this specific game
         clock_info = data.get("clock_info")
         if clock_info and clock_info["status"] == "active":
           session["white_time"] = clock_info.get("white", session["white_time"])
           session["black_time"] = clock_info.get("black", session["black_time"])
-        
-        # Handles moves and API for this specific game
-        move_data = data.get("move_data")
-        if move_data:
-          move_uci = move_data["move_uci"]
-          main_page = self.get_page("MainPage")
-          if main_page:
-            main_page.update_game_status(game_id, f"Status: Siste trekk {move_uci}")
-
-          payload = {
-            "board_id": game_id,
-            "white_player_name": pairing["white_name"],
-            "white_player_id": pairing["white_id"],
-            "black_player_name": pairing["black_name"],
-            "black_player_id":pairing["black_id"],
-            "fen": move_data["fen"],
-            "pgn": move_data["pgn"],
-            "white_time": session["white_time"],
-            "black_time": session["black_time"],
-            "is_active": True
-          }
-          self.api_client.sync_game_state(payload)
 
         # Handle live feed UI
         if self.live_window is not None and self.live_window.winfo_exists():
-          # TODO: ENDRE AT MAN IKKE SJEKKER GAME_ID == KAMERA ID!!!
           if game_id == self.live_camera_id:
             self._update_live_video(data["frame"], data["clock_frame"])
       
       except queue.Empty:
-        continue
+        pass
     
     # Loop again in approx 30ms
     self.after(30, self._poll_vision_queues)
@@ -333,8 +332,9 @@ class MainAdminDashboard(ctk.CTk):
       return
     
     # Start camera thread
-    q = queue.Queue()
-    worker = VisionThread(q, camera_source=int(pairing["camera_id"]), logger=self.logger)
+    frame_q = queue.Queue()
+    event_q = queue.Queue()
+    worker = VisionThread(frame_q, event_q, camera_source=int(pairing["camera_id"]), logger=self.logger)
 
     # Ready clock state
     initial_seconds = pairing.get("initial_seconds", None) # Defaults to None if missing
@@ -348,7 +348,8 @@ class MainAdminDashboard(ctk.CTk):
 
     # Store it in state
     self.active_sessions[game_id] = {
-      "queue": q,
+      "queue": frame_q,
+      "event_queue": event_q,
       "worker": worker,
       "pairing_data": pairing,
       "white_time": initial_seconds,

@@ -17,7 +17,7 @@ class VisionThread(threading.Thread):
   Background thread that captures video and runs heavy AI models.
   Keeps the main GUI thread from freezing.
   """
-  def __init__(self, frame_queue: queue.Queue, logger, camera_source=0):
+  def __init__(self, frame_queue: queue.Queue, event_queue: queue.Queue, logger, camera_source=0):
     super().__init__(daemon=True)
 
     # Logger
@@ -25,6 +25,7 @@ class VisionThread(threading.Thread):
 
     # Thread and IO state
     self.frame_queue = frame_queue
+    self.event_queue = event_queue
     self.camera_source = camera_source
     self.is_running = threading.Event()
     self.cap = None
@@ -191,11 +192,14 @@ class VisionThread(threading.Thread):
         self.current_board.push(move)
         self.reference_occupied = current_occupied
         game = chess.pgn.Game.from_board(self.current_board)
-        self.latest_move = {
+
+        self.event_queue.put({
+          "type": "move",
           "move_uci": move.uci(),
           "fen": self.current_board.fen(),
           "pgn": str(game)
-        }
+        })
+
         self.is_checking_move = False
 
       elif self.check_counter >= self.MAX_CHECKS:
@@ -237,9 +241,7 @@ class VisionThread(threading.Thread):
       "frame": board_display,
       "clock_frame": clock_display,
       "raw_frame": raw_frame.copy(),
-      "move_data": self.latest_move,
       "clock_info": self.latest_clock_info,
-      "status_message": self.latest_status_message
     })
 
     if self.latest_move:
