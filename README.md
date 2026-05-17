@@ -97,12 +97,6 @@ Kjør alle tester med:
 python -m pytest
 ```
 
-For å se testdekning:
-
-```bash
-pytest --cov
-```
-
 ## Prosjektstruktur
 
 - `/api` - Inneholder FastAPI-applikasjonen, databasemodeller (`models.py`) og database-oppsett (`database.py`).
