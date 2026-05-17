@@ -24,11 +24,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # ALLOWS REACT TO TALK TO PYTHON (CORS)
-# React runs on localhost:5173, FastAPI on localhost:8000. 
-# Browsers block this by default unless you add this:
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For dev, allow everyone. Lock this down later.
+    allow_origins=["*"], # For dev, allow everyone
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -185,5 +183,3 @@ async def create_player(player: Player, session: Session = Depends(get_session))
 
   print(f"Ny spiller lagt til: {player.name} (ID: {player.id})")
   return player
-
-# Run with: python -m uvicorn api.main:app --reload --port 8000

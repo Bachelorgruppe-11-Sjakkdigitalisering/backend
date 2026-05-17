@@ -298,7 +298,6 @@ class MainAdminDashboard(ctk.CTk):
       return
     
     # Assign a mock Game ID 
-    # TODO: dette må kanskje komme fra database i fremtiden??
     game_id = len(self.tournament_pairings) + 1
     
     new_pairing = {
