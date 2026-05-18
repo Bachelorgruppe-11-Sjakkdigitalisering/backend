@@ -59,7 +59,6 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
 
 def get_board_diff(reference_occupied, current_occupied):
     """ compares the previous board state to the current. returns a list of coordiantes of lost, gained and changed pieces."""
-    """Returnerer lister over felter som er mistet, vunnet eller endret."""
     lost = [pos for pos in reference_occupied if pos not in current_occupied]
     gained = [pos for pos in current_occupied if pos not in reference_occupied]
     changed = [pos for pos in current_occupied if pos in reference_occupied 
