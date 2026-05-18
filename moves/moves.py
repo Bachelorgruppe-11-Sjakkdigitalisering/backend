@@ -24,9 +24,10 @@ COLOR_MAP = {
     11: "white"  # white-rook
 }
 
-# Method for getting a overview over which fields on the board is covered by a chess piece.
-# This returns a dictonary og occupied squares.
+
 def get_occupied_squares_on_raw_frame(frame, model, M):
+    """Method for getting a overview over which fields on the board is covered by a chess piece.
+    This returns a dictonary og occupied squares."""
     results = model(frame, conf=0.3, verbose=False)
     occupied = {}
     
@@ -56,8 +57,8 @@ def get_occupied_squares_on_raw_frame(frame, model, M):
                 
     return occupied
 
-# compares the previous board state to the current. returns a list of coordiantes of lost, gained and changed pieces.
 def get_board_diff(reference_occupied, current_occupied):
+    """ compares the previous board state to the current. returns a list of coordiantes of lost, gained and changed pieces."""
     """Returnerer lister over felter som er mistet, vunnet eller endret."""
     lost = [pos for pos in reference_occupied if pos not in current_occupied]
     gained = [pos for pos in current_occupied if pos not in reference_occupied]
@@ -65,8 +66,8 @@ def get_board_diff(reference_occupied, current_occupied):
                and current_occupied[pos] != reference_occupied[pos]]
     return lost, gained, changed
 
-# Attempts to identify a standard move by checking all combinations of moves possible with the detected lost, gained and changed list.
 def try_standard_move(lost, gained, changed, current_board):
+    """Attempts to identify a standard move by checking all combinations of moves possible with the detected lost, gained and changed list."""
     from_candidates = lost
     to_candidates = gained + changed
     
@@ -84,8 +85,8 @@ def try_standard_move(lost, gained, changed, current_board):
                 return promo_move
     return None
 
-# checks if there is a legal castling move with the pieces detected.
 def try_castling(lost, current_board):
+    """checks if there is a legal castling move with the pieces detected."""
     for move in current_board.legal_moves:
         if current_board.is_castling(move):
             f_sq = chess.square_name(move.from_square)
@@ -94,8 +95,8 @@ def try_castling(lost, current_board):
                 return move
     return None
 
-# checks if there is a legal en passant capture move with the pieces detected.
 def try_en_passant(lost, current_board):
+    """checks if there is a legal en passant capture move with the pieces detected."""
     for move in current_board.legal_moves:
         if current_board.is_en_passant(move):
             f_sq = chess.square_name(move.from_square)
@@ -103,10 +104,10 @@ def try_en_passant(lost, current_board):
                 return move
     return None
 
-# main move method which combines all of the special moves with the normal moves. Moves get detected by compared the current board state
-# to the last confirmed board state. the method will check all possible combinations involving the fields that has changed,
-# and determines what move are right by checking them against chess rule with python chess library.
 def detect_move(reference_occupied, current_occupied, current_board):
+    """main move method which combines all of the special moves with the normal moves. Moves get detected by compared the current board state
+    to the last confirmed board state. the method will check all possible combinations involving the fields that has changed,
+    and determines what move are right by checking them against chess rule with python chess library."""
 
     lost, gained, changed = get_board_diff(reference_occupied, current_occupied)
     print(f"lost: {lost}, gained: {gained}, changed: {changed}")

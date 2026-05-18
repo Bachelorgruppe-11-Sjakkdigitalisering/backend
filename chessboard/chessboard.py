@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 
 
-# Manually sorts four corner points into order.
-# [top-left, top-right, bottom-right, bottom-left]
 def sort_points(pts):
+    """Manually sorts four corner points into order.
+    [top-left, top-right, bottom-right, bottom-left]"""
     # Sorterer hjørner manuelt: [Topp-Venstre, Topp-Høyre, Bunn-Høyre, Bunn-Venstre]
     pts = np.array(pts, dtype="float32")
     rect = np.zeros((4, 2), dtype="float32")
@@ -22,9 +22,8 @@ def sort_points(pts):
     rect[0] = pts[np.argmax(diff)] # a1
     return rect
 
-
-# filters the top 4 most confident corners from the yolo model.
 def extract_corners(results):
+    """filters the top 4 most confident corners from the yolo model."""
 
     if len(results[0].boxes) >= 4:
         all_boxes = results[0].boxes.xyxy.cpu().numpy()
@@ -43,9 +42,9 @@ def extract_corners(results):
         return sort_points(pts)
     return None
 
-# calculates the transformation matrix to flatten the board.
-# calculates the inverse matrix to prooject digital data back onto the video.
 def lock_perspective(history, white_side="right"):
+    """calculates the transformation matrix to flatten the board.
+    calculates the inverse matrix to prooject digital data back onto the video."""
     if len(history) > 0:
         # use the average of recent corner detection to reduce flickering.
         avg_corners = np.mean(history, axis=0).astype("float32")
@@ -67,7 +66,7 @@ def lock_perspective(history, white_side="right"):
     return None, None
 
 def draw_grid(frame, M_inv):
-    # draws the grid and square labels back onto the video feed, by using M_inv.
+    """draws the grid and square labels back onto the video feed, by using M_inv."""
     for i in range(9):
         # Vertical lines
         p1 = np.array([[[i * 100, 0]]], dtype="float32")
